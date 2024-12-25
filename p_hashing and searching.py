@@ -31,7 +31,7 @@ songs = [
             "pitch": 0.1,
             "harmonic_to_noise_ratio": 0.2
         },
-        "instrumental_features": {
+        "music_features": {
             "spectral_centroid": 0.1,
             "spectral_bandwidth": 0.2,
             "spectral_contrast": [0.3, 0.4, 0.5],
@@ -61,7 +61,7 @@ songs = [
             "pitch": 0.2,
             "harmonic_to_noise_ratio": 0.3
         },
-        "instrumental_features": {
+        "music_features": {
             "spectral_centroid": 0.2,
             "spectral_bandwidth": 0.3,
             "spectral_contrast": [0.4, 0.5, 0.6],
@@ -97,7 +97,7 @@ def perceptual_hash(features: Dict) -> str:
 for song in songs:
     song["song_features_hash"] = perceptual_hash(song["song_features"])
     song["vocal_features_hash"] = perceptual_hash(song["vocal_features"])
-    song["instrumental_features_hash"] = perceptual_hash(song["instrumental_features"])
+    song["music_features_hash"] = perceptual_hash(song["music_features"])
 
 # # Print results
 # print(json.dumps(songs, indent=4))
@@ -110,7 +110,7 @@ def create_hashed_database(songs: list) -> list:
     for song in songs:
         song["song_features_hash"] = perceptual_hash(song["song_features"])
         song["vocal_features_hash"] = perceptual_hash(song["vocal_features"])
-        song["instrumental_features_hash"] = perceptual_hash(song["instrumental_features"])
+        song["music_features_hash"] = perceptual_hash(song["music_features"])
         hashed_database.append(song)
     return hashed_database
 
@@ -125,7 +125,7 @@ def create_hashed_database_json(input_json_path: str, output_json_path: str):
     for song in songs:
         song["song_features_hash"] = perceptual_hash(song["song_features"])
         song["vocal_features_hash"] = perceptual_hash(song["vocal_features"])
-        song["instrumental_features_hash"] = perceptual_hash(song["instrumental_features"])
+        song["music_features_hash"] = perceptual_hash(song["music_features"])
         hashed_database.append(song)
 
     with open(output_json_path, 'w') as outfile:
