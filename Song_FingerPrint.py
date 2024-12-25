@@ -3,7 +3,7 @@ import numpy as np
 from typing import Dict, List
 
 class Song_FingerPrint:
-    def __init__(self, song_spectrogram:np.ndarray, vocals_spectrogram:np.ndarray, music_spectrogram:np.ndarray, sampling_rate, song_name:str=""):
+    def __init__(self, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, sampling_rate = 200, song_name:str="UNKNOWN"):
         """
         sr: Sampling rate of the original audio
         index zero for song_sg, 1 for vocals, 2 for ,music
@@ -16,8 +16,7 @@ class Song_FingerPrint:
         self.__song_name = song_name
         self.__features:list[Dict]= []
         
-        self.extract_features()
-        
+    
     def get_song_name(self):
         return self.__song_name
     
@@ -29,6 +28,9 @@ class Song_FingerPrint:
     
     def get_music_features(self):
         return self.__features[2]
+    
+    def get_features(self):
+        return self.__features
     
     def extract_general_features(self, spectrogram:np.ndarray):
         """
@@ -100,21 +102,21 @@ class Song_FingerPrint:
         return features
 
     def extract_features(self):
-        features = self.extract_general_features(self.__song_sg)
-        features.update(self.extract_vocal_features(self.__song_sg))
-        features.update(self.extract_instrument_features(self.__song_sg))
+        if self.__song_sg is not None:
+            features = self.extract_general_features(self.__song_sg)
+            features.update(self.extract_vocal_features(self.__song_sg))
+            features.update(self.extract_instrument_features(self.__song_sg))
+            self.__features.append(features)
         
-        self.__features.append(features)
+        if self.__vocals_sg is not None:
+            features = self.extract_general_features(self.__vocals_sg)
+            features.update(self.extract_vocal_features(self.__vocals_sg))
+            features.update(self.extract_instrument_features(self.__vocals_sg))
+            self.__features.append(features)
         
-        features = self.extract_general_features(self.__vocals_sg)
-        features.update(self.extract_vocal_features(self.__vocals_sg))
-        features.update(self.extract_instrument_features(self.__vocals_sg))
-        
-        self.__features.append(features)
-        
-        features = self.extract_general_features(self.__music_sg)
-        features.update(self.extract_vocal_features(self.__music_sg))
-        features.update(self.extract_instrument_features(self.__music_sg))
-        
-        self.__features.append(features)
+        if self.__music_sg is not None:
+            features = self.extract_general_features(self.__music_sg)
+            features.update(self.extract_vocal_features(self.__music_sg))
+            features.update(self.extract_instrument_features(self.__music_sg))
+            self.__features.append(features)
                
