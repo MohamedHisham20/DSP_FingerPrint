@@ -1,90 +1,111 @@
 import librosa
 import numpy as np
-from typing import Dict
+from typing import Dict, List
 
 class Song_FingerPrint:
-    def __init__(self, song_spectrogram:np.ndarray, vocals_spectrogram:np.ndarray, music_spectrogram:np.ndarray, sampling_rate):
+    def __init__(self, song_spectrogram:np.ndarray, vocals_spectrogram:np.ndarray, music_spectrogram:np.ndarray, sampling_rate, song_name:str=""):
         """
         sr: Sampling rate of the original audio
+        index zero for song_sg, 1 for vocals, 2 for ,music
+        
         """
-        self.song_sg = song_spectrogram
-        self.vocals_sg = vocals_spectrogram
-        self.music_sg = music_spectrogram
-        
-        self.general_features:Dict = {}
-        self.vocals_features:Dict = {}
-        self.music_features:Dict = {}
-        
         self.sr = sampling_rate
         
-        self.extract_general_features()
-        self.extract_vocal_features()
-        self.extract_instrument_features()
+        self.song_sg = song_spectrogram
+        self.vocals_sg = vocals_spectrogram
+        self.music_sg  = music_spectrogram
+        
+        self.song_name = song_name
+        
+        self.features:list[Dict]= []
+        
+        self.extract_features()
+        
     
-    def extract_general_features(self):
+    def extract_general_features(self, spectrogram:np.ndarray):
         """
         Extract general features from the song spectrogram.
         """
         # Compute power spectrogram
-        power_spec = np.abs(self.song_sg) ** 2
+        features = {}
+        
+        power_spec = np.abs(spectrogram) ** 2
 
         # Spectral Centroid
-        self.general_features['spectral_centroid'] = librosa.feature.spectral_centroid(S=power_spec, sr=self.sr).mean()
+        features['spectral_centroid'] = librosa.feature.spectral_centroid(S=power_spec, sr=self.sr).mean()
 
         # Spectral Bandwidth
-        self.general_features['spectral_bandwidth'] = librosa.feature.spectral_bandwidth(S=power_spec, sr=self.sr).mean()
+        features['spectral_bandwidth'] = librosa.feature.spectral_bandwidth(S=power_spec, sr=self.sr).mean()
 
         # Spectral Contrast
-        self.general_features['spectral_contrast'] = librosa.feature.spectral_contrast(S=power_spec, sr=self.sr).mean(axis=1).tolist()
+        features['spectral_contrast'] = librosa.feature.spectral_contrast(S=power_spec, sr=self.sr).mean(axis=1).tolist()
 
         # Spectral Flatness
-        self.general_features['spectral_flatness'] = librosa.feature.spectral_flatness(S=power_spec).mean()
+        features['spectral_flatness'] = librosa.feature.spectral_flatness(S=power_spec).mean()
 
         # MFCCs (mean across time)
         mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=self.sr, n_mfcc=13)
-        self.general_features['mfccs'] = mfccs.mean(axis=1).tolist()
+        features['mfccs'] = mfccs.mean(axis=1).tolist()
+        
+        return features
  
-    def extract_vocal_features(self):
+    def extract_vocal_features(self, spectrogram:np.ndarray):
         """
         Extract vocal-specific features from the vocals spectrogram.
         """
+        features = {}
+        
         # Pitch (Using librosa's piptrack for pitch estimation)
-        pitches, magnitudes = librosa.piptrack(S=np.abs(self.vocals_sg), sr=self.sr)
-        self.vocals_features['pitch'] = pitches[pitches > 0].mean() if pitches.any() else 0
+        pitches, magnitudes = librosa.piptrack(S=np.abs(spectrogram), sr=self.sr)
+        features['pitch'] = pitches[pitches > 0].mean() if pitches.any() else 0
         
         # Harmonic-to-Noise Ratio (HNR)
-        hnr = librosa.feature.rms(S=np.abs(self.vocals_sg)) / np.std(self.vocals_sg, axis=0)
-        self.vocals_features['harmonic_to_noise_ratio'] = hnr.mean()
+        hnr = librosa.feature.rms(S=np.abs(spectrogram)) / np.std(spectrogram, axis=0)
+        features['harmonic_to_noise_ratio'] = hnr.mean()
         
         # Formants (Approximation: Use peaks in the spectrum)
-        spectral_peaks = np.argmax(np.abs(self.vocals_sg), axis=0)
-        self.vocals_features['formants'] = spectral_peaks[:5].tolist()  # First 5 peaks as formants
+        spectral_peaks = np.argmax(np.abs(spectrogram), axis=0)
+        features['formants'] = spectral_peaks[:5].tolist()  # First 5 peaks as formants
 
-    def extract_instrument_features(self):
+        return features
+
+    def extract_instrument_features(self, spectrogram:np.ndarray):
         """
         Extract instrument-specific features from the music spectrogram.
         """
+        features = {}
+        
         # Chroma Features
-        chroma = librosa.feature.chroma_stft(S=np.abs(self.music_sg), sr=self.sr)
-        self.music_features['chroma_features'] = chroma.mean(axis=1).tolist()
+        chroma = librosa.feature.chroma_stft(S=np.abs(spectrogram), sr=self.sr)
+        features['chroma_features'] = chroma.mean(axis=1).tolist()
 
         # Spectral Peaks
-        spectral_peaks = np.argmax(np.abs(self.music_sg), axis=0)
-        self.music_features['spectral_peaks'] = spectral_peaks.tolist()
+        spectral_peaks = np.argmax(np.abs(spectrogram), axis=0)
+        features['spectral_peaks'] = spectral_peaks.tolist()
 
         # Rhythm (Estimate tempo)
-        onset_env = librosa.onset.onset_strength(S=np.abs(self.music_sg), sr=self.sr)
+        onset_env = librosa.onset.onset_strength(S=np.abs(spectrogram), sr=self.sr)
         tempo, _ = librosa.beat.beat_track(onset_envelope=onset_env, sr=self.sr)
-        self.music_features['tempo'] = tempo
+        features['tempo'] = tempo
+        
+        return features
 
-
-# Example usage
-# Load audio
-y, sr = librosa.load('song_file.wav', duration=30)
-spectrogram = librosa.stft(y)
-
-# Feature extraction
-extractor = Song_FingerPrint(spectrogram, sr)
-song_features = extractor.extract_song_features()
-
-print(song_features)
+    def extract_features(self):
+        features = self.extract_general_features(self.song_sg)
+        features.update(self.extract_vocal_features(self.song_sg))
+        features.update(self.extract_instrument_features(self.song_sg))
+        
+        self.features.append(features)
+        
+        features = self.extract_general_features(self.vocals_sg)
+        features.update(self.extract_vocal_features(self.vocals_sg))
+        features.update(self.extract_instrument_features(self.vocals_sg))
+        
+        self.features.append(features)
+        
+        features = self.extract_general_features(self.music_sg)
+        features.update(self.extract_vocal_features(self.music_sg))
+        features.update(self.extract_instrument_features(self.music_sg))
+        
+        self.features.append(features)
+               
