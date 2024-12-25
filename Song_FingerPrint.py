@@ -30,22 +30,25 @@ class Song_FingerPrint:
         features = {}
         
         power_spec = np.abs(spectrogram) ** 2
+        
+        mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=self.sr, n_mfcc=13)
+        
+        features['mfccs'] = mfccs.mean(axis=1).tolist()
+        
+        # # Spectral Centroid
+        # features['spectral_centroid'] = librosa.feature.spectral_centroid(S=power_spec, sr=self.sr).mean()
 
-        # Spectral Centroid
-        features['spectral_centroid'] = librosa.feature.spectral_centroid(S=power_spec, sr=self.sr).mean()
+        # # Spectral Bandwidth
+        # features['spectral_bandwidth'] = librosa.feature.spectral_bandwidth(S=power_spec, sr=self.sr).mean()
 
-        # Spectral Bandwidth
-        features['spectral_bandwidth'] = librosa.feature.spectral_bandwidth(S=power_spec, sr=self.sr).mean()
+        # # Spectral Contrast
+        # features['spectral_contrast'] = librosa.feature.spectral_contrast(S=power_spec, sr=self.sr).mean(axis=1).tolist()
 
-        # Spectral Contrast
-        features['spectral_contrast'] = librosa.feature.spectral_contrast(S=power_spec, sr=self.sr).mean(axis=1).tolist()
-
-        # Spectral Flatness
-        features['spectral_flatness'] = librosa.feature.spectral_flatness(S=power_spec).mean()
+        # # Spectral Flatness
+        # features['spectral_flatness'] = librosa.feature.spectral_flatness(S=power_spec).mean()
 
         # MFCCs (mean across time)
-        mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=self.sr, n_mfcc=13)
-        features['mfccs'] = mfccs.mean(axis=1).tolist()
+
         
         return features
  
@@ -84,9 +87,9 @@ class Song_FingerPrint:
         features['spectral_peaks'] = spectral_peaks.tolist()
 
         # Rhythm (Estimate tempo)
-        onset_env = librosa.onset.onset_strength(S=np.abs(spectrogram), sr=self.sr)
-        tempo, _ = librosa.beat.beat_track(onset_envelope=onset_env, sr=self.sr)
-        features['tempo'] = tempo
+        # onset_env = librosa.onset.onset_strength(S=np.abs(spectrogram), sr=self.sr)
+        # tempo, _ = librosa.beat.beat_track(onset_envelope=onset_env, sr=self.sr)
+        # features['tempo'] = tempo
         
         return features
 
