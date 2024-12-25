@@ -15,60 +15,16 @@ songs = [
         "song_name": "song1",
         "song_features": {
             "spectral_centroid": 0.1,
-            "spectral_bandwidth": 0.2,
-            "spectral_contrast": [0.3, 0.4, 0.5],
-            "spectral_flatness": 0.6,
-            "mfccs": [0.7, 0.8, 0.9],
-            "pitch": 0.1,
-            "harmonic_to_noise_ratio": 0.2
+            "mfccs": [ ],
         },
         "vocal_features": {
-            "spectral_centroid": 0.1,
-            "spectral_bandwidth": 0.2,
-            "spectral_contrast": [0.3, 0.4, 0.5],
-            "spectral_flatness": 0.6,
-            "mfccs": [0.7, 0.8, 0.9],
             "pitch": 0.1,
-            "harmonic_to_noise_ratio": 0.2
+            "harmonic_to_noise_ratio": 0.2, 
+            "formants": []
         },
         "music_features": {
-            "spectral_centroid": 0.1,
-            "spectral_bandwidth": 0.2,
-            "spectral_contrast": [0.3, 0.4, 0.5],
-            "spectral_flatness": 0.6,
-            "mfccs": [0.7, 0.8, 0.9],
-            "pitch": 0.1,
-            "harmonic_to_noise_ratio": 0.2
-        }
-    },
-    {
-        "song_name": "song2",
-        "song_features": {
-            "spectral_centroid": 0.2,
-            "spectral_bandwidth": 0.3,
-            "spectral_contrast": [0.4, 0.5, 0.6],
-            "spectral_flatness": 0.7,
-            "mfccs": [0.8, 0.9, 1.0],
-            "pitch": 0.2,
-            "harmonic_to_noise_ratio": 0.3
-        },
-        "vocal_features": {
-            "spectral_centroid": 1.0,
-            "spectral_bandwidth": 2.0,
-            "spectral_contrast": [3.0, 4.0, 6.0],
-            "spectral_flatness": 7.0,
-            "mfccs": [8.0, 9.0, 1.0],
-            "pitch": 0.2,
-            "harmonic_to_noise_ratio": 0.3
-        },
-        "music_features": {
-            "spectral_centroid": 0.2,
-            "spectral_bandwidth": 0.3,
-            "spectral_contrast": [0.4, 0.5, 0.6],
-            "spectral_flatness": 0.7,
-            "mfccs": [0.8, 0.9, 1.0],
-            "pitch": 0.2,
-            "harmonic_to_noise_ratio": 0.3
+            "chroma": [],
+            "spectral_peaks": []
         }
     }
 ]
