@@ -1,7 +1,4 @@
-# apply perceptual hashing to find similar songs
-# and search for a song in the database
-# using the extracted features
-#
+
 import librosa
 import hashlib
 import json
@@ -11,34 +8,6 @@ from scipy.spatial.distance import cosine
 from scipy.spatial.distance import euclidean
 from scipy.spatial.distance import cityblock
 from scipy.spatial.distance import jensenshannon
-
-# function to perceptual hash a song from a np array of songs which are in the format of
-
-# [
-#     {
-#         "song_name": "song1",
-#         "song_features": {
-#             "spectral_centroid": 0.1,
-#             "spectral_bandwidth": 0.2,
-#             "spectral_contrast": [0.3, 0.4, 0.5],
-#             "spectral_flatness": 0.6,
-#             "mfccs": [0.7, 0.8, 0.9],
-#             "pitch": 0.1,
-#             "harmonic_to_noise_ratio": 0.2
-#         },
-#         "vocal_features": {
-#             "pitch": 0.3,
-#             "harmonic_to_noise_ratio": 0.4,
-#             "formants": [0.5, 0.6, 0.7]
-#         },
-#         "instrumental_features": {
-#             "pitch": 0.8,
-#             "harmonic_to_noise_ratio": 0.9
-#         }
-#     },
-#
-# ]
-
 
 # Sample structure
 songs = [
@@ -130,8 +99,8 @@ for song in songs:
     song["vocal_features_hash"] = perceptual_hash(song["vocal_features"])
     song["instrumental_features_hash"] = perceptual_hash(song["instrumental_features"])
 
-# Print results
-print(json.dumps(songs, indent=4))
+# # Print results
+# print(json.dumps(songs, indent=4))
 
 def create_hashed_database(songs: list) -> list:
     """
@@ -145,44 +114,23 @@ def create_hashed_database(songs: list) -> list:
         hashed_database.append(song)
     return hashed_database
 
-# def perceptual_hash_song(song_features: Dict) -> Dict:
-#     """
-#     Perceptual hashing of a song based on its features.
-#
-#     :param song_features: Dictionary containing the features of the song.
-#     :return: Dictionary containing the perceptual hash of the song.
-#     """
-#     # Extract features of the song
-#     general_features = song_features['general_features']
-#     vocal_features = song_features['vocal_features']
-#     instrumental_features = song_features['instrumental_features']
-#
-#     # Hash the general features
-#     general_hash = hash_features(general_features)
-#
-#     # Hash the vocal features
-#     vocal_hash = hash_features(vocal_features)
-#
-#     # Hash the instrumental features
-#     instrumental_hash = hash_features(instrumental_features)
-#
-#     # Combine the hashes
-#     perceptual_hash = general_hash + vocal_hash + instrumental_hash
-#
-#     return perceptual_hash
-#
-# def hash_features(features: Dict) -> str:
-#     """
-#     Hash a set of features.
-#
-#     :param features: Dictionary of features to be hashed.
-#     :return: Hash of the features.
-#     """
-#     # Convert the features to a string
-#     features_str = str(features)
-#
-#     # Hash the string
-#     return str(hash(features_str))
+def create_hashed_database_json(input_json_path: str, output_json_path: str):
+    """
+    Create a hashed database from a JSON file of songs and their features, and save it to another JSON file.
+    """
+    with open(input_json_path, 'r') as infile:
+        songs = json.load(infile)
+
+    hashed_database = []
+    for song in songs:
+        song["song_features_hash"] = perceptual_hash(song["song_features"])
+        song["vocal_features_hash"] = perceptual_hash(song["vocal_features"])
+        song["instrumental_features_hash"] = perceptual_hash(song["instrumental_features"])
+        hashed_database.append(song)
+
+    with open(output_json_path, 'w') as outfile:
+        json.dump(hashed_database, outfile, indent=4)
+
 
 def search_hashed_database(input_features: Dict, hashed_database: list, distance_metric: str = 'cosine', top_n: int = 1) -> list:
     """
@@ -227,6 +175,12 @@ if __name__ == "__main__":
 
     # Example song database
     hashed_database = create_hashed_database(songs)
+
+    # ##################### using json ##################
+    # input_json_path = 'input_songs.json'
+    # output_json_path = 'hashed_songs.json'
+    # create_hashed_database_json(input_json_path, output_json_path)
+    # ###################################################
 
 
     # test the search_database function
