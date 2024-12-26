@@ -7,15 +7,20 @@ from scipy.spatial.distance import cosine
 from scipy.spatial.distance import euclidean
 from scipy.spatial.distance import cityblock
 from scipy.spatial.distance import jensenshannon
-from DB_Generator import perceptual_hash, songs_DB
+from DB_Generator import perceptual_hash, Songs_Database
 from Song_FingerPrint import Song_FingerPrint
 # Sample structure
 
 class Match_Maker:
+    """
+Accepts the spectrogram of the audio under investigation
+    """
     def __init__(self, spectrogram):
-        self.DB = songs_DB
         self.sg = spectrogram
         
+    def get_database(self):
+        return Songs_Database
+    
     def update_spectrogram(self, new_spectrogram):
         self.sg = new_spectrogram    
     
@@ -47,7 +52,7 @@ class Match_Maker:
         else:
             raise ValueError("Invalid distance metric. Supported metrics: 'cosine', 'euclidean', 'cityblock', 'jensenshannon'.")
     
-    def search_hashed_database(self, hashed_database: list, distance_metric: str = 'cosine', top_n: int = 1) -> list:
+    def search_hashed_database(self ,distance_metric: str = 'cosine', top_n: int = 1) -> list:
         """
         Search the hashed database for the most similar song to the input features.
         """
@@ -56,7 +61,7 @@ class Match_Maker:
         vocal_distances = []
         music_distances = []
 
-        for song in hashed_database:
+        for song in Songs_Database:
             db_hash = song["song_features"]
             distance = self.calculate_hash_distance(input_hash, db_hash, distance_metric)
             song_distances.append((distance, song))

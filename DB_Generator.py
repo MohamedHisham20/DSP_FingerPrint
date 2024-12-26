@@ -8,7 +8,7 @@ from Song_FingerPrint import Song_FingerPrint
 from typing import List, Dict
 
 SR = 100
-songs_DB:List[Dict] = []
+Songs_Database:List[Dict] = []
 
 def perceptual_hash(features: Dict) -> str:
     """
@@ -40,15 +40,15 @@ for i in range(songs_spectrograms):
     
     song_fingerprint = Song_FingerPrint(ssg, vsg, msg, SR, song_name)
     
-    songs_DB[i]["song_name"] = song_name
+    Songs_Database[i]["song_name"] = song_name
     
     song_features = perceptual_hash(song_fingerprint.get_song_features())
-    songs_DB[i]["song_features"] = song_features
+    Songs_Database[i]["song_features"] = song_features
     
     vocals_features = perceptual_hash(song_fingerprint.get_vocals_features())
-    songs_DB[i]["vocals_features"] = vocals_features
+    Songs_Database[i]["vocals_features"] = vocals_features
     
     music_features = perceptual_hash(song_fingerprint.get_music_features())
-    songs_DB[i]["music_features"] = music_features
+    Songs_Database[i]["music_features"] = music_features
     
     
