@@ -25,13 +25,6 @@ Accepts the spectrogram of the audio under investigation
     
     def delete_spectrogram(self):
         self.__sg = []
-
-
-    # def __extract_hashed_input_features(self, input_spectrogram):
-    #     input_fingerprint = Song_FingerPrint(input_spectrogram, input_spectrogram, input_spectrogram)
-    #     input_features = input_fingerprint.get_features()
-        
-    #     return perceptual_hash(input_features)
     
     
     def __calculate_hash_distance(self, hash1: str, hash2: str, distance_metric: str) -> float:

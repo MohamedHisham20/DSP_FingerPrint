@@ -1,8 +1,12 @@
 import librosa
 import numpy as np
-from typing import Dict, List
+from typing import Dict, List, Union
 from scipy.signal import find_peaks
 from typing import Union
+from pprint import pprint
+from json_ctrl import write_in_json_file
+
+real_num = Union[int, float]
 
 class Song_FingerPrint:
     def __init__(self, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, sampling_rate=200, song_name:str="UNKNOWN"):
@@ -22,14 +26,24 @@ class Song_FingerPrint:
         self.__hashed_features: list[Dict] = [{} for _ in range(3)]
         
         self.__extract_features()
+        write_in_json_file('test.json', self.__features)
         
     def get_song_name(self):
         return self.__song_name
     
+    def get_spectral_centroid_3d(self):
+        features = self.get_raw_features()
+        spectral_centroid_3d: List[real_num] = []
+        
+        for dict in features:
+            spectral_centroid_3d.append(dict["spectral_centroid"])
+            
+        return spectral_centroid_3d    
+    
     def get_hashed_features(self):
         return self.__hashed_features 
     
-    def get_features(self):
+    def get_raw_features(self):
         return self.__features
     
     def __extract_general_features(self, spectrogram:np.ndarray):
@@ -37,17 +51,23 @@ class Song_FingerPrint:
         Extract general features from the song spectrogram.
         """
         features = {}
+        power_spec = spectrogram ** 2
         
-        power_spec = np.abs(spectrogram) ** 2
+        # Mean Centroid, Scalar
+        specral_centroid = librosa.feature.spectral_centroid(S=power_spec, sr=self._SR).mean()
+        specral_centroid = float(specral_centroid)
+        features['spectral_centroid'] = specral_centroid
         
         #list
         mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=self._SR, n_mfcc=13)
-        features['mfccs'] = mfccs.mean(axis=1).tolist()
+        mfccs = mfccs.mean(axis=1).tolist()
         
-        # Mean Centroid
-        features['spectral_centroid'] = librosa.feature.spectral_centroid(S=power_spec, sr=self._SR).mean()
+        for i in range(len(mfccs)):
+            mfccs[i] = float(mfccs[i])
         
-        features['song_peaks'] = self.__calculate_spectral_peaks(spectrogram)
+        features['mfccs'] = mfccs
+        
+        #features['song_peaks'] = self.__calculate_spectral_peaks(spectrogram)
         
         return features
         
@@ -64,13 +84,15 @@ class Song_FingerPrint:
         """
         features = {}
         
+        #Extract Pitch --  Scalar
         pitches, magnitudes = librosa.piptrack(S=np.abs(spectrogram), sr=self._SR)
-        features['pitch'] = pitches[pitches > 0].mean() if pitches.any() else 0
+        features['pitch'] = float(pitches[pitches > 0].mean() if pitches.any() else 0)
         
-        hnr = librosa.feature.rms(S=np.abs(spectrogram)) / np.std(spectrogram, axis=0)
-        features['HNR'] = hnr.mean()
+        #Extract harmonics to noise ratio
+        hnr = librosa.feature.rms(S=np.abs(spectrogram)) / (np.std(spectrogram, axis=0) + 1e-10)
+        features['HNR'] = float(hnr.mean())
         
-        features['vocals_peaks'] = self.__calculate_spectral_peaks(spectrogram)
+        # features['vocals_peaks'] = self.__calculate_spectral_peaks(spectrogram)
         
         return features
 
@@ -81,9 +103,14 @@ class Song_FingerPrint:
         features = {}
         
         chroma = librosa.feature.chroma_stft(S=np.abs(spectrogram), sr=self._SR)
-        features['chroma'] = chroma.mean(axis=1).tolist()
+        chroma = chroma.mean(axis=1).tolist()
+        
+        for i in range(len(chroma)):
+            chroma[i] = float(chroma[i])
+        
+        features['chroma'] = chroma
 
-        features['music_peaks'] = self.__calculate_spectral_peaks(spectrogram)
+        # features['music_peaks'] = self.__calculate_spectral_peaks(spectrogram)
         return features
         
         # Spectral Peaks
@@ -99,18 +126,21 @@ class Song_FingerPrint:
             features = self.__extract_general_features(self.__song_sg)
             features.update(self.__extract_vocal_features(self.__song_sg))
             features.update(self.__extract_instrument_features(self.__song_sg))
+            
             self.__features[0] = features
         
         if self.__vocals_sg is not None:
             features = self.__extract_general_features(self.__vocals_sg)
             features.update(self.__extract_vocal_features(self.__vocals_sg))
             features.update(self.__extract_instrument_features(self.__vocals_sg))
+            
             self.__features[1] = features
         
         if self.__music_sg is not None:
             features = self.__extract_general_features(self.__music_sg)
             features.update(self.__extract_vocal_features(self.__music_sg))
             features.update(self.__extract_instrument_features(self.__music_sg))
+            
             self.__features[2] = features
     
     def __calculate_spectral_peaks(self, spectrogram):

@@ -5,6 +5,8 @@ from Song_FingerPrint import Song_FingerPrint
 import hashlib
 from copy import copy
 import json
+from pprint import pprint
+from json_ctrl import write_in_json_file
 
 real_number = Union[int, float]
 
@@ -18,10 +20,7 @@ total_pitches: List[List[real_number]] = [[] for _ in range(3)]
 total_HNRs: List[List[real_number]] = [[] for _ in range(3)]
 
 total_mfccs: List[List[List]] = [[] for _ in range(3)]
-total_song_peaks: List[List[List]] = [[] for _ in range(3)]
-total_vocals_peaks: List[List[List]]= [[] for _ in range(3)]
 total_chroma_peaks: List[List[List]] = [[] for _ in range(3)]
-total_music_peaks: List[List[List]] = [[] for _ in range(3)]
 
 
 def generate_spectrograms(input_folder_path, get_song_name: bool = False):
@@ -33,6 +32,7 @@ def generate_spectrograms(input_folder_path, get_song_name: bool = False):
         if file.endswith('.wav'):
             file_path = os.path.join(input_folder_path, file)
             audio_data, sample_rate = librosa.load(file_path, sr=None)
+            
 
             # Ensure data is mono for simplicity
             if len(audio_data.shape) > 1:
@@ -48,70 +48,21 @@ def generate_spectrograms(input_folder_path, get_song_name: bool = False):
                 spectrograms.append({'song_name': file, 'SG': S_db, 'SR':sample_rate})
             else:
                 spectrograms.append(S_db)
-
+    
     return spectrograms
 
-# def perceptual_hash(fingerprint:Song_FingerPrint) -> str:
-#     """
-#     Generate a perceptual hash for a dictionary of features.
-#     """
-#     flattened_features = []
-#     for value in features.values():
-#         if isinstance(value, list):
-#             flattened_features.extend(value)
-#         else:
-#             flattened_features.append(value)
-#             flattened_features = np.array(flattened_features)
+def create_hashed_database():
+    pass
 
-#     if flattened_features.max() > 0:
-#         flattened_features = flattened_features / np.linalg.norm(flattened_features)
-
-#     hash_object = hashlib.sha256(flattened_features.tobytes())
-#     return hash_object.hexdigest()
-
-
-def create_database():    
-    songs_spectrograms = generate_spectrograms('Data/original_data/songs', True)
-    vocals_spectrograms = generate_spectrograms('Data/original_data/vocals')
-    music_spectrograms = generate_spectrograms('Data/original_data/music')
-    
-    for i in range(len(songs_spectrograms)):
-        song_name = songs_spectrograms[i]["song_name"]
-        ssg = songs_spectrograms[i]["SG"]
-        sampling_rate = songs_spectrograms[i]["SR"]
-        vsg = vocals_spectrograms[i]
-        msg = music_spectrograms[i]
-        
-
-        song_fingerprint = Song_FingerPrint(ssg, vsg, msg, sampling_rate, song_name)
-        
-        features = song_fingerprint.get_features()
-        
-        for i in range(3):
-            total_spectral_centroids[i].append(features[i]["spectral_centroid"])
-            total_pitches[i].append(features[i]["pitch"])
-            total_HNRs[i].append(features[i]["HNR"])
-            total_chroma_peaks[i].append(features[i]["chroma"])
-            total_mfccs[i].append(features[i]["mfccs"])
-            total_song_peaks[i].append(features[i]["song_peaks"])
-            total_vocals_peaks[i].append(features[i]["vocals_peaks"])
-            total_music_peaks[i].append(features[i]["music_peaks"])
-            
-        temp:Dict = {
-            "song_name": song_name,
-            "features": features
-        }
-        
-        database.append(temp)
-    
+def normalize_database():
     normalize(total_spectral_centroids)
     normalize(total_mfccs, True, "mfccs")
-    normalize(total_song_peaks, True, "song_peaks")
-    normalize(total_pitches, True, "pitch")
+    normalize(total_pitches, "pitch")
     normalize(total_HNRs)
-    normalize(total_vocals_peaks, True, "vocals_peaks")
     normalize(total_chroma_peaks, True, "chroma")
-    normalize(total_music_peaks, True, "music_peaks")
+
+def create_normalized_database():
+    normalize_database()
     
     #create normalized database
     for k in range(len(normalized_database)):
@@ -131,6 +82,38 @@ def create_database():
             dictionary["vocals_peaks"] = total_vocals_peaks[k][j]
             dictionary["chroma"] = total_chroma_peaks[k][j]
             dictionary["music_peaks"] = total_music_peaks[k][j]
+    
+def create_raw_database():    
+    songs_spectrograms: List[Dict] = generate_spectrograms('Data/original_data/songs', True)
+    vocals_spectrograms = generate_spectrograms('Data/original_data/vocals')
+    music_spectrograms = generate_spectrograms('Data/original_data/music')
+    
+    for i in range(len(songs_spectrograms)):
+        song_name = songs_spectrograms[i]["song_name"]
+        sampling_rate = songs_spectrograms[i]["SR"]
+        
+        ssg = songs_spectrograms[i]["SG"]
+        vsg = vocals_spectrograms[i]
+        msg = music_spectrograms[i]
+        
+        # Features Extraction Processed in the Song_FingerPrint Class
+        song_fingerprint = Song_FingerPrint(ssg, vsg, msg, sampling_rate, song_name)
+        
+        features = song_fingerprint.get_raw_features()
+        
+        for i in range(3):
+            total_spectral_centroids[i].append(features[i]["spectral_centroid"])
+            total_pitches[i].append(features[i]["pitch"])
+            total_HNRs[i].append(features[i]["HNR"])
+            total_chroma_peaks[i].append(features[i]["chroma"])
+            total_mfccs[i].append(features[i]["mfccs"])
+            
+        temp:Dict = {
+            "song_name": song_name,
+            "features": features
+        }
+        
+        database.append(temp)
                        
 def normalize(feature_3d: List):
     for list in feature_3d:
@@ -142,16 +125,24 @@ def normalize(feature_3d: List):
             min_max_normalize(min_val, max_val, list)
 
 def write_raw_data():
-    with open('db.json', 'w') as json_file:
-        json.dump(database, json_file, indent=4)
+    write_in_json_file('db.json', database)
         
 def write_normalized_data():
-    with open('norm_data.json', 'w') as json_file:
-        json.dump(normalized_database, json_file, indent=4)        
+    write_in_json_file('norm_data.json', normalize_database)        
+    
+def write_hashed_data():
+    pass
 
-def min_max_complex_normalize(list_of_lists):
+def min_max_complex_normalize(list_of_lists: List[List[real_number]]):
+    if any(len(inner_list) == 0 for inner_list in list_of_lists):
+        raise ValueError("One or more inner lists are empty")
+    
     list_of_arrays = [np.array(inner_list) for inner_list in list_of_lists]
-    matrix = np.stack(list_of_arrays)
+        
+    try: matrix = np.stack(list_of_arrays)
+    except ValueError as e: raise ValueError(f"Error stacking arrays: {e}")
+    
+    print(f"Matrix Shape: {matrix.shape}")  
     
     min_vals = matrix.min(axis=0)
     max_vals = matrix.max(axis=0)
@@ -165,7 +156,6 @@ def min_max_complex_normalize(list_of_lists):
     for j in range(len(list_of_lists)):
         list_of_lists[j][:] = matrix[j].tolist()
 
-
 def min_max_normalize(min, max, list):
     """
 x_norm = (x-x_min) / (x_max-x_min)    
@@ -173,12 +163,21 @@ x_norm = (x-x_min) / (x_max-x_min)
     for i in range(len(list)):
         list[i] = (list[i] - min) / (max-min)   
 
-def main():
-    # creates a raw version and a normalized version of the datavase
-    create_database()
-    
+def create_database():
+    create_raw_database()
+    create_normalized_database()
+    create_hashed_database()
+
+def write_data():
     write_raw_data()
     write_normalized_data()
-    
+    write_hashed_data()
 
+def main():
+    create_raw_database()
+    write_raw_data()
+    
+    #create_raw_database()
+    #write_data()
+    
 main()
