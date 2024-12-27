@@ -5,7 +5,7 @@ from scipy.signal import find_peaks
 from typing import Union
 
 class Song_FingerPrint:
-    def __init__(self, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, sampling_rate = 200, song_name:str="UNKNOWN"):
+    def __init__(self, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, sampling_rate=200, song_name:str="UNKNOWN"):
         """
         sr: Sampling rate of the original audio
         index zero for song_sg, 1 for vocals, 2 for ,music
@@ -18,8 +18,8 @@ class Song_FingerPrint:
         
         self.__song_name = song_name
         
-        self.__features:list[Dict]= [3]
-        self.__hashed_features: list[Dict] = [3]
+        self.__features:list[Dict]= [{} for _ in range(3)]
+        self.__hashed_features: list[Dict] = [{} for _ in range(3)]
         
         self.__extract_features()
         
@@ -184,9 +184,10 @@ Database_Sample = [
         "song_name": " ",
         "features": [
             {
-                #key-value pairs for first dict
+               #key-value pairs for first dict
             },
             {
+            
             },
             {
                 

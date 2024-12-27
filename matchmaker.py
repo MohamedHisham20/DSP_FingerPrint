@@ -7,7 +7,6 @@ from scipy.spatial.distance import cosine
 from scipy.spatial.distance import euclidean
 from scipy.spatial.distance import cityblock
 from scipy.spatial.distance import jensenshannon
-from database import perceptual_hash, Database
 from Song_FingerPrint import Song_FingerPrint
 # Sample structure
 
@@ -26,16 +25,13 @@ Accepts the spectrogram of the audio under investigation
     
     def delete_spectrogram(self):
         self.__sg = []
-    
-    
 
-    
-    
-    def __extract_hashed_input_features(self, input_spectrogram):
-        input_fingerprint = Song_FingerPrint(input_spectrogram, input_spectrogram, input_spectrogram)
-        input_features = input_fingerprint.get_features()
+
+    # def __extract_hashed_input_features(self, input_spectrogram):
+    #     input_fingerprint = Song_FingerPrint(input_spectrogram, input_spectrogram, input_spectrogram)
+    #     input_features = input_fingerprint.get_features()
         
-        return perceptual_hash(input_features)
+    #     return perceptual_hash(input_features)
     
     
     def __calculate_hash_distance(self, hash1: str, hash2: str, distance_metric: str) -> float:
@@ -60,9 +56,3 @@ Accepts the spectrogram of the audio under investigation
         else:
             raise ValueError("Invalid distance metric. Supported metrics: 'cosine', 'euclidean', 'cityblock', 'jensenshannon'.")
     
-    
-
-
-
-    def min_max_normalize(self):
-        pass
