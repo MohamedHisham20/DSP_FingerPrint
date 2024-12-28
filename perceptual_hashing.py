@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 import hashlib
 import numpy as np
-from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon
+from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon, hamming
 
 def perceptual_hash(features: Dict[str, Any]) -> str:
     """

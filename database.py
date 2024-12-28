@@ -7,6 +7,7 @@ from copy import copy
 import json
 from pprint import pprint
 from json_ctrl import write_in_json_file
+from perceptual_hashing import perceptual_hash
 
 real_number = Union[int, float]
 
@@ -14,6 +15,7 @@ number_of_songs = 11
 
 database:List[Dict] = [{} for _ in range(number_of_songs)]
 normalized_database: List[Dict] = [{} for _ in range(number_of_songs)]
+hashed_database: List[Dict]= {}
 
 total_spectral_centroids: List[List[real_number]] = [[] for _ in range(3)]
 total_pitches: List[List[real_number]] = [[] for _ in range(3)]
@@ -51,38 +53,6 @@ def generate_spectrograms(input_folder_path, get_song_name: bool = False):
     
     return spectrograms
 
-def create_hashed_database():
-    pass
-
-def normalize_database():
-    normalize(total_spectral_centroids)
-    normalize(total_mfccs, True, "mfccs")
-    normalize(total_pitches, "pitch")
-    normalize(total_HNRs)
-    normalize(total_chroma_peaks, True, "chroma")
-
-def create_normalized_database():
-    normalize_database()
-    
-    #create normalized database
-    for k in range(len(normalized_database)):
-        
-        normalized_database[k]["song_name"] = database[k]["song_name"]
-        normalized_database[k]["features"] = [{} for _ in range(3)]
-        features_list = normalized_database[k]["features"]
-        
-        for j in range(len(features_list)):
-            dictionary = features_list[j]
-            
-            dictionary["spectral_centroid"] = total_spectral_centroids[k][j]
-            dictionary["mfccs"] = total_mfccs[k][j]
-            dictionary["song_peaks"] = total_song_peaks[k][j]
-            dictionary["pitch"] = total_pitches[k][j]
-            dictionary["HNR"] = total_HNRs[k][j]
-            dictionary["vocals_peaks"] = total_vocals_peaks[k][j]
-            dictionary["chroma"] = total_chroma_peaks[k][j]
-            dictionary["music_peaks"] = total_music_peaks[k][j]
-    
 def create_raw_database():    
     songs_spectrograms: List[Dict] = generate_spectrograms('Data/original_data/songs', True)
     vocals_spectrograms = generate_spectrograms('Data/original_data/vocals')
@@ -114,7 +84,51 @@ def create_raw_database():
         }
         
         database.append(temp)
-                       
+
+def create_hashed_database():
+    create_raw_database()
+    
+    for song_fp in database:
+        hashed_database['song_name'] = song_fp['song_name']
+        features_3d = song_fp["features"]
+        
+        dimensions_strings = [" " for _ in range(3)]
+        
+        for dimension in features_3d:
+            dimension_str = perceptual_hash(dimension)
+            dimensions_strings.append(dimension_str)
+            
+        hashed_database['song_features'] = dimensions_strings[0]
+        hashed_database['vocals_features'] = dimensions_strings[1]
+        hashed_database['music_features'] = dimensions_strings[2]    
+
+def normalize_database():
+    normalize(total_spectral_centroids)
+    normalize(total_mfccs, True, "mfccs")
+    normalize(total_pitches, "pitch")
+    normalize(total_HNRs)
+    normalize(total_chroma_peaks, True, "chroma")
+
+def create_normalized_database():
+    create_raw_database()
+    normalize_database()
+    
+    #create normalized database
+    for k in range(len(normalized_database)):
+        
+        normalized_database[k]["song_name"] = database[k]["song_name"]
+        normalized_database[k]["features"] = [{} for _ in range(3)]
+        features_list = normalized_database[k]["features"]
+        
+        for j in range(len(features_list)):
+            dictionary = features_list[j]
+            
+            dictionary["spectral_centroid"] = total_spectral_centroids[k][j]
+            dictionary["mfccs"] = total_mfccs[k][j]
+            dictionary["pitch"] = total_pitches[k][j]
+            dictionary["HNR"] = total_HNRs[k][j]
+            dictionary["chroma"] = total_chroma_peaks[k][j]
+                    
 def normalize(feature_3d: List):
     for list in feature_3d:
         if complex: #list is a list of lists (Complex Feature like MFCCs)
@@ -131,11 +145,11 @@ def write_normalized_data():
     write_in_json_file('norm_data.json', normalize_database)        
     
 def write_hashed_data():
-    pass
+    write_in_json_file('hashed_db.json', hashed_database)
 
 def min_max_complex_normalize(list_of_lists: List[List[real_number]]):
-    if any(len(inner_list) == 0 for inner_list in list_of_lists):
-        raise ValueError("One or more inner lists are empty")
+    # if any(len(inner_list) == 0 for inner_list in list_of_lists):
+    #     raise ValueError("One or more inner lists are empty")
     
     list_of_arrays = [np.array(inner_list) for inner_list in list_of_lists]
         
@@ -174,10 +188,7 @@ def write_data():
     write_hashed_data()
 
 def main():
-    create_raw_database()
-    write_raw_data()
-    
-    #create_raw_database()
-    #write_data()
+    create_hashed_database()
+    write_hashed_data()
     
 main()
