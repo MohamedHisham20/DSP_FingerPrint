@@ -6,7 +6,7 @@ from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon, 
 def flatten_and_normalize(features: Dict[str, Union[float, List[float]]]):
     flattened_features = []
     
-    for key, val in features.items():
+    for key, val in sorted(features.items()):
         if isinstance(val, float):
             flattened_features.append(val)
         elif isinstance(val, list):
@@ -89,10 +89,10 @@ def calculate_hash_distance(hash1: str, hash2: str, distance_metric: str = 'h') 
     hash1_array = np.frombuffer(bytes.fromhex(hash1), dtype=np.uint8)
     hash2_array = np.frombuffer(bytes.fromhex(hash2), dtype=np.uint8)
 
-    if np.linalg.norm(hash1_array) > 0:
-        hash1_array = hash1_array / np.linalg.norm(hash1_array)
-    if np.linalg.norm(hash2_array) > 0:
-        hash2_array = hash2_array / np.linalg.norm(hash2_array)
+    # if np.linalg.norm(hash1_array) > 0:
+    #     hash1_array = hash1_array / np.linalg.norm(hash1_array)
+    # if np.linalg.norm(hash2_array) > 0:
+    #     hash2_array = hash2_array / np.linalg.norm(hash2_array)
 
     if distance_metric == 'cos':
         return cosine(hash1_array, hash2_array)

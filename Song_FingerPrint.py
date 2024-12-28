@@ -9,13 +9,16 @@ from json_ctrl import write_in_json_file
 real_num = Union[int, float]
 
 class Song_FingerPrint:
-    def __init__(self, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, sampling_rate=200, song_name:str="UNKNOWN"):
+    def __init__(self, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, sampling_rate:List=[], song_name:str="UNKNOWN"):
         """
         sr: Sampling rate of the original audio
         index zero for song_sg, 1 for vocals, 2 for ,music
         
         """
-        self._SR = sampling_rate
+        self._song_sampling_rate = sampling_rate[0]
+        self.vocals_sampling_rate = sampling_rate[1]
+        self.music_sampling_rate = sampling_rate[2]
+        
         self.__song_sg = song_spectrogram
         self.__vocals_sg = vocals_spectrogram
         self.__music_sg  = music_spectrogram
@@ -23,102 +26,171 @@ class Song_FingerPrint:
         self.__song_name = song_name
         
         self.__features:list[Dict]= [{} for _ in range(3)]
-        self.__hashed_features: list[Dict] = [{} for _ in range(3)]
         
         self.__extract_features()
         
     def get_song_name(self):
         return self.__song_name
-    
-    def get_spectral_centroid_3d(self):
-        features = self.get_raw_features()
-        spectral_centroid_3d: List[real_num] = []
-        
-        for dict in features:
-            spectral_centroid_3d.append(dict["spectral_centroid"])
-            
-        return spectral_centroid_3d    
-    
-    def get_hashed_features(self):
-        return self.__hashed_features 
-    
+       
     def get_raw_features(self):
         return self.__features
     
-    def __extract_general_features(self, spectrogram:np.ndarray):
+    def __extract_general_features(self, spectrogram:np.ndarray, sampling_rate):
         """
-        Extract general features from the song spectrogram.
+        Extract general features that can  apply to all spectrograms.
         """
         features = {}
         power_spec = spectrogram ** 2
         
-        # Mean Centroid, Scalar
-        specral_centroid = librosa.feature.spectral_centroid(S=power_spec, sr=self._SR).mean()
-        specral_centroid = float(specral_centroid)
-        features['spectral_centroid'] = specral_centroid
+        # Extract Spectral Bandwidth, scalar, works on audio or spectrogram
+        spectral_bandwidth = librosa.feature.spectral_bandwidth(S=spectrogram, sr=sampling_rate)
+        features['spectral_bandwidth'] = float(spectral_bandwidth.mean())
         
-        #list
-        mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=self._SR, n_mfcc=13)
+        # Extract Spectral Rolloff, scalar, works on audio or spectrogram
+        spectral_rolloff = librosa.feature.spectral_rolloff(S=spectrogram, sr=sampling_rate)
+        features['spectral_rolloff'] = float(spectral_rolloff.mean())
+        
+        # Mean Centroid, Scalar, works on audio or spectrogram
+        spectral_centroid = librosa.feature.spectral_centroid(S=power_spec, sr=sampling_rate).mean()
+        spectral_centroid = float(spectral_centroid)
+        features['spectral_centroid'] = spectral_centroid
+
+        # Spectral Contrast, List, works on audio or spectrogram
+        spectral_contrast = librosa.feature.spectral_contrast(S=spectrogram, sr=sampling_rate)
+        features['spectral_contrast'] = spectral_contrast.mean(axis=1).tolist()
+        
+        # Extract Zero Crossing Rate, float, works on the audio singal
+        # zero_crossing_rate = librosa.feature.zero_crossing_rate(y=librosa.istft(spectrogram))
+        # features['zero_crossing_rate'] = float(zero_crossing_rate.mean())
+         
+        #list, works on audio or spectrogram
+        mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=sampling_rate, n_mfcc=13)
         mfccs = mfccs.mean(axis=1).tolist()
-        
-        for i in range(len(mfccs)):
-            mfccs[i] = float(mfccs[i])
-        
+        for i in range(len(mfccs)): mfccs[i] = float(mfccs[i])
         features['mfccs'] = mfccs
         
-        #features['song_peaks'] = self.__calculate_spectral_peaks(spectrogram)
-        
+        # Energy Distribution, List
+        energy = np.sum(spectrogram, axis=0)
+        features['energy_distribution'] = energy.tolist()
+                
         return features
-        
-        # # Spectral Bandwidth
-        # features['spectral_bandwidth'] = librosa.feature.spectral_bandwidth(S=power_spec, sr=self._SR).mean()
-        # # Spectral Contrast
-        # features['spectral_contrast'] = librosa.feature.spectral_contrast(S=power_spec, sr=self._SR).mean(axis=1).tolist()
-        # # Spectral Flatness
-        # features['spectral_flatness'] = librosa.feature.spectral_flatness(S=power_spec).mean()
-
-    def __extract_vocal_features(self, spectrogram:np.ndarray):
+    
+    def __extract_chroma(self, spectrogram, sampling_rate):
         """
-        Extract vocal-specific features from the vocals spectrogram.
+        return chroma list, works on audio or spectrogram
         """
-        features = {}
-        
-        #Extract Pitch --  Scalar
-        pitches, magnitudes = librosa.piptrack(S=np.abs(spectrogram), sr=self._SR)
-        features['pitch'] = float(pitches[pitches > 0].mean() if pitches.any() else 0)
-        
-        #Extract harmonics to noise ratio
-        hnr = librosa.feature.rms(S=np.abs(spectrogram)) / (np.std(spectrogram, axis=0) + 1e-10)
-        features['HNR'] = float(hnr.mean())
-        
-        # features['vocals_peaks'] = self.__calculate_spectral_peaks(spectrogram)
-        
-        return features
-
-    def __extract_instrument_features(self, spectrogram:np.ndarray):
-        """
-        Extract instrument-specific features from the music spectrogram.
-        """
-        features = {}
-        
-        chroma = librosa.feature.chroma_stft(S=np.abs(spectrogram), sr=self._SR)
+        chroma = librosa.feature.chroma_stft(S=spectrogram, sr=sampling_rate)
         chroma = chroma.mean(axis=1).tolist()
         
-        for i in range(len(chroma)):
-            chroma[i] = float(chroma[i])
+        for i in range(len(chroma)): chroma[i] = float(chroma[i])
         
-        features['chroma'] = chroma
+        return chroma
+    
+    def __extract_onset_strength(self, spectrogram, sampling_rate):
+        onset_env = librosa.onset.onset_strength(S=spectrogram, sr=sampling_rate).tolist()
+        return onset_env
+    
+    #applied on the audio signal
+    # def __extract_tempo(self, spectrogram, sampling_rate, onset_strength):
+    #     tempo, _ = librosa.beat.beat_track(onset_envelope=onset_strength, sr=sampling_rate)
+    #     return tempo
+     
+    #applied on audio signal
+    # def __extract_tonnetz(self, sg, sr):
+    #     tonnetz = librosa.feature.tonnetz(chroma=librosa.feature.chroma_cqt(S=sg, sr=sr))
+    #     return tonnetz.mean(axis=1).tolist() 
+   
+    def __extract_energy_entropy(self, sg):
+        energy_entropy = -np.sum((sg / np.sum(sg, axis=0)) * np.log2(sg / (np.sum(sg, axis=0) + 0.000001)), axis=0)
+        return energy_entropy.tolist()
 
-        # features['music_peaks'] = self.__calculate_spectral_peaks(spectrogram)
+    def __extract_spectral_flateness(self, sg):
+        """
+    return spectral flateness mean value, works on audio and spectrogram   
+        """
+        spectral_flatness = librosa.feature.spectral_flatness(S=sg)
+        return float(spectral_flatness.mean())
+         
+    def __extract_full_song_features(self, spectrogram:np.ndarray, sampling_rate):
+        """
+    Features that best apply to the full song spectrogram.\n
+        """
+        features = {}
+        
+        #chroma, List
+        features["full_chroma"] = self.__extract_chroma(spectrogram, sampling_rate)
+        
+        #onset strength
+        features["full_onset_strength"] = self.__extract_onset_strength(spectrogram, sampling_rate)
+        
+        #tempo
+        # features["full_tempo"] = self.__extract_tempo(spectrogram, sampling_rate, features['full_onset_strength'])
+        
+        # #full tonnetz
+        # features['full_tonnetz'] = self.__extract_tonnetz(spectrogram, sampling_rate)
+        
+        #entropy
+        features['full_energy_entropy'] = self.__extract_energy_entropy(spectrogram)
+        
+        #spectral_flateness
+        features['spectral_flateness'] =self.__extract_spectral_flateness(spectrogram)
+        
         return features
         
-        # Spectral Peaks
-        # spectral_peaks = np.argmax(np.abs(spectrogram), axis=0)
-        # features['spectral_peaks'] = spectral_peaks.tolist()
-        # Rhythm (Estimate tempo)
-        # onset_env = librosa.onset.onset_strength(S=np.abs(spectrogram), sr=self._SR)
-        # tempo, _ = librosa.beat.beat_track(onset_envelope=onset_env, sr=self._SR)
-        # features['tempo'] = tempo
+    def __extract_vocal_features(self, spectrogram:np.ndarray, sampling_rate):
+        """
+        Extract vocal-specific features from the vocals spectrogram.\n
+        pitch, formants, HNR, 
+        """
+        features = {}
+        
+        #spectral flateness 
+        features['vocals_spectral_flateness'] = self.__extract_spectral_flateness(spectrogram)
+        
+        #Extract Pitch --  Scalar, work on audio and spectrogram
+        pitches, magnitudes = librosa.piptrack(S=spectrogram, sr=sampling_rate)
+        features['vocals_pitch'] = float(pitches[pitches > 0].mean() if pitches.any() else 0)
+        
+        #Extract harmonics to noise ratio, Scalar,works on spectrogram or audio
+        hnr = librosa.feature.rms(S=spectrogram) / (np.std(spectrogram, axis=0) + 1e-10)
+        features['HNR'] = float(hnr.mean())
+        
+        #jitter
+        #shimmer
+        #spectral envelope
+        #voice activity detection
+        #Cepstral Peak Prominence
+        
+        return features
+
+    def __extract_instrument_features(self, spectrogram:np.ndarray, sampling_rate):
+        """
+        Extract instrument-specific features from the music spectrogram.\n
+        beat, strength
+        """
+        features = {}
+        
+        #tonnetz
+        # features['music_tonnetz'] = self.__extract_tonnetz(spectrogram, sampling_rate)
+        
+        #energy entropy
+        features['music_energy_entropy'] = self.__extract_energy_entropy(spectrogram)
+        
+        #List
+        features['music_chroma'] = self.__extract_chroma(spectrogram, sampling_rate)
+        
+        #Extract Pitch --  Scalar
+        pitches, magnitudes = librosa.piptrack(S=np.abs(spectrogram), sr=sampling_rate)
+        features['music_pitch'] = float(pitches[pitches > 0].mean() if pitches.any() else 0)
+
+        #onset strength, list
+        features['music_onset_strength'] = self.__extract_onset_strength(spectrogram, sampling_rate)
+        
+        #tempo
+        # features['music_tempo'] = self.__extract_tempo(spectrogram, sampling_rate, features['music_onset_strength'])
+         
+        #inharmonicity
+        #energy envelope 
                
     def __extract_features(self):
         if self.__song_sg is not None:
@@ -205,23 +277,4 @@ class Song_FingerPrint:
         return min_peak_height, neighborhood_size
 
  
-# A list of dicts Each dict is song finger print
-# each dict has two keys
-Database_Sample = [
-    # entry example
-    {
-        "song_name": " ",
-        "features": [
-            {
-               #key-value pairs for first dict
-            },
-            {
-            
-            },
-            {
-                
-            }
-        ]
-    },
-] 
   
