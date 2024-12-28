@@ -26,7 +26,6 @@ class Song_FingerPrint:
         self.__hashed_features: list[Dict] = [{} for _ in range(3)]
         
         self.__extract_features()
-        write_in_json_file('test.json', self.__features)
         
     def get_song_name(self):
         return self.__song_name

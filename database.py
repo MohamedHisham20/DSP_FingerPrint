@@ -6,16 +6,14 @@ import hashlib
 from copy import copy
 import json
 from pprint import pprint
-from json_ctrl import write_in_json_file
+import json_ctrl
 from perceptual_hashing import perceptual_hash
 
 real_number = Union[int, float]
 
 number_of_songs = 11
 
-database:List[Dict] = [{} for _ in range(number_of_songs)]
 normalized_database: List[Dict] = [{} for _ in range(number_of_songs)]
-hashed_database: List[Dict]= {}
 
 total_spectral_centroids: List[List[real_number]] = [[] for _ in range(3)]
 total_pitches: List[List[real_number]] = [[] for _ in range(3)]
@@ -26,7 +24,10 @@ total_chroma_peaks: List[List[List]] = [[] for _ in range(3)]
 
 
 def generate_spectrograms(input_folder_path, get_song_name: bool = False):
-    # Generate spectrogram using librosa from audio files in input_folder
+    """
+return a list of spectrgorams of the .wav files in the input folder.\n
+if get_song_name_is true, the song name and the audio file sampling rate are also returned.\n
+    """
     spectrograms = []
     files = os.listdir(input_folder_path)
     
@@ -50,10 +51,20 @@ def generate_spectrograms(input_folder_path, get_song_name: bool = False):
                 spectrograms.append({'song_name': file, 'SG': S_db, 'SR':sample_rate})
             else:
                 spectrograms.append(S_db)
+                
+            if S_db.size == 0 : print("empty spectrogram")   
     
     return spectrograms
 
-def create_raw_database():    
+def create_raw_database():
+    """
+This function creates populates a global variable named database with the raw data\n
+this function however does not write the data in json file.\n
+to write the data in json file use function write_raw_data().    
+    """
+    global number_of_songs
+    database:List[Dict] = [{} for _ in range(number_of_songs)]
+        
     songs_spectrograms: List[Dict] = generate_spectrograms('Data/original_data/songs', True)
     vocals_spectrograms = generate_spectrograms('Data/original_data/vocals')
     music_spectrograms = generate_spectrograms('Data/original_data/music')
@@ -71,36 +82,47 @@ def create_raw_database():
         
         features = song_fingerprint.get_raw_features()
         
-        for i in range(3):
-            total_spectral_centroids[i].append(features[i]["spectral_centroid"])
-            total_pitches[i].append(features[i]["pitch"])
-            total_HNRs[i].append(features[i]["HNR"])
-            total_chroma_peaks[i].append(features[i]["chroma"])
-            total_mfccs[i].append(features[i]["mfccs"])
+        #loop required for normalization
+        # for i in range(3):
+        #     total_spectral_centroids[i].append(features[i]["spectral_centroid"])
+        #     total_pitches[i].append(features[i]["pitch"])
+        #     total_HNRs[i].append(features[i]["HNR"])
+        #     total_chroma_peaks[i].append(features[i]["chroma"])
+        #     total_mfccs[i].append(features[i]["mfccs"])
             
-        temp:Dict = {
-            "song_name": song_name,
-            "features": features
-        }
-        
-        database.append(temp)
+        database[i] = {"song_name":song_name, "features":features}
+            
+    return database    
 
 def create_hashed_database():
-    create_raw_database()
+    """
+return the hashed form of the database.\n
+each song will be a dict with for key, value pairs.\n
+keys: song_name, song_features, vocals_features, music_features.\n
+Data type of all values is string.
+    """
+    database = create_raw_database()
     
+    global number_of_songs
+    hashed_database: List[Dict]= [{} for _ in range(number_of_songs)]
+    
+    i = 0
     for song_fp in database:
-        hashed_database['song_name'] = song_fp['song_name']
+        hashed_database[i]['song_name'] = song_fp['song_name']
         features_3d = song_fp["features"]
         
-        dimensions_strings = [" " for _ in range(3)]
+        dimensions_strings = []
         
         for dimension in features_3d:
             dimension_str = perceptual_hash(dimension)
             dimensions_strings.append(dimension_str)
             
-        hashed_database['song_features'] = dimensions_strings[0]
-        hashed_database['vocals_features'] = dimensions_strings[1]
-        hashed_database['music_features'] = dimensions_strings[2]    
+        hashed_database[i]['song_features'] = dimensions_strings[0]
+        hashed_database[i]['vocals_features'] = dimensions_strings[1]
+        hashed_database[i]['music_features'] = dimensions_strings[2]    
+        i+=1
+
+    return hashed_database
 
 def normalize_database():
     normalize(total_spectral_centroids)
@@ -110,7 +132,7 @@ def normalize_database():
     normalize(total_chroma_peaks, True, "chroma")
 
 def create_normalized_database():
-    create_raw_database()
+    database = create_raw_database()
     normalize_database()
     
     #create normalized database
@@ -139,13 +161,15 @@ def normalize(feature_3d: List):
             min_max_normalize(min_val, max_val, list)
 
 def write_raw_data():
-    write_in_json_file('db.json', database)
+    database = create_raw_database()
+    json_ctrl.write_in_json_file('db.json', database)
         
 def write_normalized_data():
-    write_in_json_file('norm_data.json', normalize_database)        
+    json_ctrl.write_in_json_file('norm_data.json', normalize_database)        
     
 def write_hashed_data():
-    write_in_json_file('hashed_db.json', hashed_database)
+    hdb = create_hashed_database()
+    json_ctrl.write_in_json_file('hashed_db.json', hdb)
 
 def min_max_complex_normalize(list_of_lists: List[List[real_number]]):
     # if any(len(inner_list) == 0 for inner_list in list_of_lists):
@@ -177,18 +201,7 @@ x_norm = (x-x_min) / (x_max-x_min)
     for i in range(len(list)):
         list[i] = (list[i] - min) / (max-min)   
 
-def create_database():
-    create_raw_database()
-    create_normalized_database()
-    create_hashed_database()
-
-def write_data():
-    write_raw_data()
-    write_normalized_data()
-    write_hashed_data()
-
 def main():
-    create_hashed_database()
     write_hashed_data()
     
 main()
