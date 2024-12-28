@@ -45,7 +45,8 @@ if get_song_name_is true, the song name and the audio file sampling rate are als
             audio_data = audio_data[:sample_rate * 30]
 
             S = np.abs(librosa.stft(audio_data))
-            S_db = librosa.amplitude_to_db(S, ref=np.max)
+            S_db = librosa.amplitude_to_db(S, ref=1)
+            S_db = np.abs(S_db)
 
             if get_song_name:
                 spectrograms.append({'song_name': file, 'SG': S_db, 'SR':sample_rate})
@@ -202,6 +203,6 @@ x_norm = (x-x_min) / (x_max-x_min)
 
 
 def main():
-    write_hashed_data()
+    write_raw_data()
     
 main()    

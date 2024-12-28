@@ -3,8 +3,6 @@ import numpy as np
 from typing import Dict, List, Union
 from scipy.signal import find_peaks
 from typing import Union
-from pprint import pprint
-from json_ctrl import write_in_json_file
 
 real_num = Union[int, float]
 
@@ -15,9 +13,9 @@ class Song_FingerPrint:
         index zero for song_sg, 1 for vocals, 2 for ,music
         
         """
-        self._song_sampling_rate = sampling_rate[0]
-        self.vocals_sampling_rate = sampling_rate[1]
-        self.music_sampling_rate = sampling_rate[2]
+        self.__song_sampling_rate = sampling_rate[0]
+        self.__vocals_sampling_rate = sampling_rate[1]
+        self.__music_sampling_rate = sampling_rate[2]
         
         self.__song_sg = song_spectrogram
         self.__vocals_sg = vocals_spectrogram
@@ -55,23 +53,23 @@ class Song_FingerPrint:
         spectral_centroid = float(spectral_centroid)
         features['spectral_centroid'] = spectral_centroid
 
-        # Spectral Contrast, List, works on audio or spectrogram
-        spectral_contrast = librosa.feature.spectral_contrast(S=spectrogram, sr=sampling_rate)
-        features['spectral_contrast'] = spectral_contrast.mean(axis=1).tolist()
+        # # Spectral Contrast, List, works on audio or spectrogram
+        # spectral_contrast = librosa.feature.spectral_contrast(S=spectrogram, sr=sampling_rate)
+        # features['spectral_contrast'] = spectral_contrast.mean(axis=1).tolist()
         
-        # Extract Zero Crossing Rate, float, works on the audio singal
-        # zero_crossing_rate = librosa.feature.zero_crossing_rate(y=librosa.istft(spectrogram))
-        # features['zero_crossing_rate'] = float(zero_crossing_rate.mean())
+        # # Extract Zero Crossing Rate, float, works on the audio singal
+        # # zero_crossing_rate = librosa.feature.zero_crossing_rate(y=librosa.istft(spectrogram))
+        # # features['zero_crossing_rate'] = float(zero_crossing_rate.mean())
          
-        #list, works on audio or spectrogram
-        mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=sampling_rate, n_mfcc=13)
-        mfccs = mfccs.mean(axis=1).tolist()
-        for i in range(len(mfccs)): mfccs[i] = float(mfccs[i])
-        features['mfccs'] = mfccs
+        # #list, works on audio or spectrogram
+        # mfccs = librosa.feature.mfcc(S=librosa.power_to_db(power_spec), sr=sampling_rate, n_mfcc=13)
+        # mfccs = mfccs.mean(axis=1).tolist()
+        # for i in range(len(mfccs)): mfccs[i] = float(mfccs[i])
+        # features['mfccs'] = mfccs
         
-        # Energy Distribution, List
-        energy = np.sum(spectrogram, axis=0)
-        features['energy_distribution'] = energy.tolist()
+        # # Energy Distribution, List
+        # energy = np.sum(spectrogram, axis=0)
+        # features['energy_distribution'] = energy.tolist()
                 
         return features
     
@@ -186,7 +184,9 @@ class Song_FingerPrint:
         #onset strength, list
         features['music_onset_strength'] = self.__extract_onset_strength(spectrogram, sampling_rate)
         
-        #tempo
+        return features
+        
+        #tempo, audio feature
         # features['music_tempo'] = self.__extract_tempo(spectrogram, sampling_rate, features['music_onset_strength'])
          
         #inharmonicity
@@ -194,24 +194,15 @@ class Song_FingerPrint:
                
     def __extract_features(self):
         if self.__song_sg is not None:
-            features = self.__extract_general_features(self.__song_sg)
-            features.update(self.__extract_vocal_features(self.__song_sg))
-            features.update(self.__extract_instrument_features(self.__song_sg))
-            
+            features = self.__extract_general_features(self.__song_sg, self.__song_sampling_rate)
             self.__features[0] = features
         
         if self.__vocals_sg is not None:
-            features = self.__extract_general_features(self.__vocals_sg)
-            features.update(self.__extract_vocal_features(self.__vocals_sg))
-            features.update(self.__extract_instrument_features(self.__vocals_sg))
-            
+            features = self.__extract_general_features(self.__vocals_sg,self.__vocals_sampling_rate)
             self.__features[1] = features
         
         if self.__music_sg is not None:
-            features = self.__extract_general_features(self.__music_sg)
-            features.update(self.__extract_vocal_features(self.__music_sg))
-            features.update(self.__extract_instrument_features(self.__music_sg))
-            
+            features = self.__extract_general_features(self.__music_sg, self.__music_sampling_rate)
             self.__features[2] = features
     
     def __calculate_spectral_peaks(self, spectrogram):
