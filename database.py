@@ -7,7 +7,7 @@ from copy import copy
 import json
 from pprint import pprint
 import json_ctrl
-from perceptual_hashing import perceptual_hash
+from perceptual_hashing import perceptual_hash, p_hash
 
 real_number = Union[int, float]
 
@@ -111,15 +111,11 @@ Data type of all values is string.
         hashed_database[i]['song_name'] = song_fp['song_name']
         features_3d = song_fp["features"]
         
-        dimensions_strings = []
-        
-        for dimension in features_3d:
-            dimension_str = perceptual_hash(dimension)
-            dimensions_strings.append(dimension_str)
+        features_3d_hashed = p_hash(features_3d)
             
-        hashed_database[i]['song_features'] = dimensions_strings[0]
-        hashed_database[i]['vocals_features'] = dimensions_strings[1]
-        hashed_database[i]['music_features'] = dimensions_strings[2]    
+        hashed_database[i]['song_features'] = features_3d_hashed[0]
+        hashed_database[i]['vocals_features'] = features_3d_hashed[1]
+        hashed_database[i]['music_features'] = features_3d_hashed[2]    
         i+=1
 
     return hashed_database

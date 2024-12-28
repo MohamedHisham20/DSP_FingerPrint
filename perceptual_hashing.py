@@ -1,7 +1,35 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 import hashlib
 import numpy as np
 from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon, hamming
+
+def flatten_and_normalize(features: Dict[str, Union[float, List[float]]]):
+    flattened_features = []
+    
+    for key, val in features.items():
+        if isinstance(val, float):
+            flattened_features.append(val)
+        elif isinstance(val, list):
+            flattened_features.extend(val)
+            
+    flattened_features = np.array(flattened_features)
+    
+    if np.linalg.norm(flattened_features) > 0:
+        flattened_features = flattened_features / np.linalg.norm(flattened_features)
+        
+    return flattened_features.tolist()                
+
+def p_hash(features_3d: List[Dict]):
+    features_3d_hashed = []
+    
+    for dimension in features_3d:
+        dimension = flatten_and_normalize(dimension)
+        dimension = str(dimension).encode()
+        dimension = hashlib.sha256(dimension)
+        dimension = dimension.hexdigest()
+        features_3d_hashed.append(dimension)
+        
+    return features_3d_hashed
 
 def perceptual_hash(features: Dict[str, Any]) -> str:
     """
