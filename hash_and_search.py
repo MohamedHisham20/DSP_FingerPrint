@@ -77,9 +77,14 @@ def search_hashed_database(query_features: Dict[str, Any], hashed_database: List
     distances.sort(key=lambda x: x[0])
     return [song for _, song in distances[:top_n]]
 
-def calculate_hash_distance(hash1: str, hash2: str, distance_metric: str) -> float:
+def calculate_hash_distance(hash1: str, hash2: str, distance_metric: str = 'h') -> float:
     """
-    Calculate the distance between two hashes based on the selected distance metric.
+    Calculate the distance between two hashes based on the selected distance metric.\n
+    distance_metric: cos --> cosine \n
+    e -- > euclidean\n
+    c --> cityblock\n
+    j --> jensenshannon\n
+    h --> hamming
     """
     hash1_array = np.frombuffer(bytes.fromhex(hash1), dtype=np.uint8)
     hash2_array = np.frombuffer(bytes.fromhex(hash2), dtype=np.uint8)
@@ -89,17 +94,29 @@ def calculate_hash_distance(hash1: str, hash2: str, distance_metric: str) -> flo
     if np.linalg.norm(hash2_array) > 0:
         hash2_array = hash2_array / np.linalg.norm(hash2_array)
 
-    if distance_metric == 'cosine':
+    if distance_metric == 'cos':
         return cosine(hash1_array, hash2_array)
-    elif distance_metric == 'euclidean':
+    elif distance_metric == 'e':
         return euclidean(hash1_array, hash2_array)
-    elif distance_metric == 'cityblock':
+    elif distance_metric == 'c':
         return cityblock(hash1_array, hash2_array)
-    elif distance_metric == 'jensenshannon':
+    elif distance_metric == 'j':
         return jensenshannon(hash1_array, hash2_array)
+    elif distance_metric == 'h':
+        return hamming(hash1_array, hash2_array)
     else:
         raise ValueError(
             "Invalid distance metric. Supported metrics: 'cosine', 'euclidean', 'cityblock', 'jensenshannon'.")
+
+# def calc_hamming_distance(hash1: str, hash2: str):
+#     if not (len(hash1)==len(hash2)):
+#         print("Hamming Distances require two hashed to be of equal length")
+#         return
+    
+#     bin_hash1 = bin(int(hash1, 16))[2:].zfill(256)
+#     bin_hash2 = bin(int(hash2, 16))[2:].zfill(256)
+    
+#     return sum(c1 != c2 for c1, c2 in zip(bin_hash1, bin_hash2))
 
 def main():
     # Create an example database

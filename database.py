@@ -7,7 +7,7 @@ from copy import copy
 import json
 from pprint import pprint
 import json_ctrl
-from perceptual_hashing import perceptual_hash, p_hash
+from hash_and_search import perceptual_hash, p_hash
 
 real_number = Union[int, float]
 
@@ -42,7 +42,7 @@ if get_song_name_is true, the song name and the audio file sampling rate are als
                 audio_data = np.mean(audio_data, axis=1)
 
             # Trim to first 20 seconds
-            audio_data = audio_data[:sample_rate * 20]
+            audio_data = audio_data[:sample_rate * 30]
 
             S = np.abs(librosa.stft(audio_data))
             S_db = librosa.amplitude_to_db(S, ref=np.max)
@@ -197,7 +197,8 @@ x_norm = (x-x_min) / (x_max-x_min)
     for i in range(len(list)):
         list[i] = (list[i] - min) / (max-min)   
 
+
 def main():
     write_hashed_data()
     
-main()
+main()    
