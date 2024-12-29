@@ -34,8 +34,8 @@ if get_song_name_is true, the song name and the audio file sampling rate are als
     for file in files:
         if file.endswith('.wav'):
             file_path = os.path.join(input_folder_path, file)
+            file_path = os.path.normpath(file_path)
             audio_data, sample_rate = librosa.load(file_path, sr=None)
-            
 
             # Ensure data is mono for simplicity
             if len(audio_data.shape) > 1:
@@ -77,6 +77,7 @@ to write the data in json file use function write_raw_data().
         sr.append(vocals_spectrograms[i]["SR"])
         sr.append(music_spectrograms[i]["SR"])
         
+        
         ssg = songs_spectrograms[i]["SG"]
         vsg = vocals_spectrograms[i]["SG"]
         msg = music_spectrograms[i]["SG"]
@@ -106,6 +107,8 @@ keys: song_name, song_features, vocals_features, music_features.\n
 Data type of all values is string.
     """
     database = create_raw_database()
+    
+    print("raw created successfully")
     
     global number_of_songs
     hashed_database: List[Dict]= [{} for _ in range(number_of_songs)]
@@ -162,10 +165,10 @@ def normalize(feature_3d: List):
 
 def write_raw_data():
     database = create_raw_database()
-    json_ctrl.write_in_json_file('db.json', database)
+    json_ctrl.write_in_json_file('db_test.json', database)
         
 def write_normalized_data():
-    json_ctrl.write_in_json_file('norm_data.json', normalize_database)        
+    json_ctrl.write_in_json_file('norm_data.json', normalize_database)       
     
 def write_hashed_data():
     hdb = create_hashed_database()
@@ -203,6 +206,6 @@ x_norm = (x-x_min) / (x_max-x_min)
 
 
 def main():
-    write_raw_data()
+    write_hashed_data()
     
 main()    

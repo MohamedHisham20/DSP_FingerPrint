@@ -11,7 +11,6 @@ class Song_FingerPrint:
         """
         sr: Sampling rate of the original audio
         index zero for song_sg, 1 for vocals, 2 for ,music
-        
         """
         self.__song_sampling_rate = sampling_rate[0]
         self.__vocals_sampling_rate = sampling_rate[1]
