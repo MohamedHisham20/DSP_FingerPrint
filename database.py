@@ -85,17 +85,15 @@ def create_database():
         vsg = vocals_spectrograms[i]["SG"]
         msg = music_spectrograms[i]["SG"]
         
-        # Features Extraction Processed in the Song_FingerPrint Class
-        song_fingerprint = Song_FingerPrint(ssg, vsg, msg, sr, song_name)
+        # Features Extraction and hashing processed in the Song_FingerPrint Class
+        song_fingerprint = Song_FingerPrint(sampling_rate=sr, song_spectrogram=ssg, vocals_spectrogram=vsg, music_spectrogram=msg, song_name=song_name)
         
         raw_features = song_fingerprint.get_raw_features()
         hashed_features = song_fingerprint.get_hashed_features()
             
         database[i] = {"song_name":song_name, "features":raw_features}
         hashed_database[i] = {'song_name':song_name,
-                              'song_features':hashed_features[0],
-                              'vocals_features':hashed_features[1],
-                              'music_features':hashed_features[2]
+                              'hashed_features':hashed_features
                               }
             
     return database, hashed_database    
