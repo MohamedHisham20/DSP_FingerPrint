@@ -1,0 +1,68 @@
+[
+    {
+        "song_name": "A Thousand Years(original).wav",
+        "song_features": "c2a1ac3c249cb954f2d6c199b4dc5f9117b03e017c66b51b79425bad834bb08b",
+        "vocals_features": "d0585e50404e0086b7f93649b051be3635580708b3e7dc8d74e6b35f4d75b969",
+        "music_features": "5ce56d91e0207efe9a55dc07b0680727e14ee8cf80f71a0136be53c2c62b0d88"
+    },
+    {
+        "song_name": "Alkanas(original).wav",
+        "song_features": "fe28e69175f7f1e37c6a3936f51d8c94c605de9740d56fb05ee0ff6447464e2f",
+        "vocals_features": "aebcdacc6062841da408f189fe8f794c60bea657bd1ae4908cdaf1f1551089b2",
+        "music_features": "904aabd7a49b4f98db5711d51216d5a9cc25704998d7a82ec611d871069053c6"
+    },
+    {
+        "song_name": "FE!N.wav",
+        "song_features": "6cd4afd7ae7b41ae3530535fee08c6baccbaf8a377972e369d038e91c1e45641",
+        "vocals_features": "64d3cee15bc6931bf077aac25b73329c808472286078eb7e2158ba3eed7cd49a",
+        "music_features": "3ce50c5d3d031db3e140629f4d49f9d91930fcf60f9e1c3e5c6d91230ecca078"
+    },
+    {
+        "song_name": "Hit the Road Jack (Original).wav",
+        "song_features": "efd31cd16a7f0960701751ae211f6695c7a2019d4c72f783fa4570b98c09f1d3",
+        "vocals_features": "c173af73b759d950b6c81d33ff07ed646fcf54275533937b9ef90d3db3b78275",
+        "music_features": "a0ca295cda24d1dc42adb4c174c8c3e673be1222038be0cd5996316b86fc69a0"
+    },
+    {
+        "song_name": "Let Her Go (Original).wav",
+        "song_features": "c37166c158b92e8b00e62b459cda743e17e2dad16ee2f63e668cd7fbccdf40ca",
+        "vocals_features": "25ba35322faa1782b3853cb8d57e0f8d3d5176f96f91390174c77fe1ce9dca1f",
+        "music_features": "d0b985b166ec1b6d7761fdd46fec730e95929522b4ccd78a83c9429a059aafe6"
+    },
+    {
+        "song_name": "Rolling_in_the_deep(Original).mp3.wav",
+        "song_features": "fc224b838e0d95d6676f21af97874a3b59354d160e6f5687d8251efff1df5991",
+        "vocals_features": "36b47279d96064408bb8003710581e3f6333bf694063ac1db349ba6b44188281",
+        "music_features": "e82496829d9af6add0ecb87b45c2458a2846bbd17f9e61238020eab643805a7d"
+    },
+    {
+        "song_name": "Shake It Out (original) (2).wav",
+        "song_features": "4c2b8109996ef9e62b8a146eaa845b7074fe7c062c57e1aa4c20b4f447467b29",
+        "vocals_features": "03c63b8b291751faf23cae10432e8f1e1e8f7dc575b8bea307645f12a8973005",
+        "music_features": "b2018240d61e04e5223657a2b6304ab354371e754243c4f38442951413892168"
+    },
+    {
+        "song_name": "Somthing Just Like That(Original).wav",
+        "song_features": "ee5bb656cef99cbd32ea29efd5df789921bd43628bd90b2cc1c889c954969808",
+        "vocals_features": "4d999835a95aaea8b89f12a4a22138ea7a5e8ed937b8575426a7c95b51ef56d2",
+        "music_features": "384e7c53cb4eb7a2475a75367067b195a4e4bbda43c30e0352533556789dd197"
+    },
+    {
+        "song_name": "sweetdreams(original).wav",
+        "song_features": "e3ccd2a362c385e7dfa1159898b9bef853b0d288b3b6c3827a9e87d239033b5d",
+        "vocals_features": "64cbcbc54a8d2628beaac29a215131795e2f70e051ef41d7eae5034ac6c31747",
+        "music_features": "e53f416071061a57522a81108cb6a20eb18dc82835afa140662e5c639f1e5994"
+    },
+    {
+        "song_name": "wen_elkhael[music+vocals].wav",
+        "song_features": "eacf1025fc5bf1e79f555ce00523b95a80ec5b2408e71340965d5f8af5f19026",
+        "vocals_features": "03b64177c7ab51ed38d20c337e45e07092446c417883bcafd21295f89f5de627",
+        "music_features": "c1a195ee5881733861f8a6decdd170218c610b6620a1630a99e02b82daeaccfd"
+    },
+    {
+        "song_name": "Ya Lala(original).wav",
+        "song_features": "ceaacebe0d5c100027a7e773175ebf21c572855c7637faa9ad04b01b5b1eb1d7",
+        "vocals_features": "7386f8bbbd3f2e1276d2f2ea753679aebfa92ecff948e46a3dedf6e4b5761d91",
+        "music_features": "478d255e2d5346c78c6a3b565e4b032ba0e1e810861e9f8d1f4dc8dcf0dfd09c"
+    }
+]

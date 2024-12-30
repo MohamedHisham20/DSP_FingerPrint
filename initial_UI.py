@@ -6,6 +6,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import librosa
+from matchmaker import Match_Maker
+from spectrogram_generator import SG_Generator
 
 
 class FingerprintApp(QMainWindow):
@@ -13,6 +16,8 @@ class FingerprintApp(QMainWindow):
         super().__init__()
         self.setWindowTitle("Fingerprint App")
         self.setGeometry(100, 100, 800, 600)
+        
+        self.sg = None
 
         # Initialize components
         self.table = QTableWidget(10, 2)
@@ -25,7 +30,7 @@ class FingerprintApp(QMainWindow):
 
         self.search_button = QPushButton("Search for Similar Songs")
         self.combine_button = QPushButton("Combine Songs")
-        self.load_button = QPushButton("Load .npy File")
+        self.load_button = QPushButton("Load wav File")
 
         # Create a Matplotlib canvas for plotting
         self.canvas = FigureCanvas(plt.figure(figsize=(5, 3)))
@@ -44,8 +49,23 @@ class FingerprintApp(QMainWindow):
         self.setCentralWidget(container)
 
         # Connect buttons to functions
-        self.load_button.clicked.connect(self.load_npy_file)
+        self.load_button.clicked.connect(self.load_wav_file)
+        self.search_button.clicked.connect(self.get_search_results)
 
+
+    def load_wav_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open .wav File", "", "WAV Files (*.wav)")
+
+        if file_path:
+            try:
+               sg = SG_Generator.generate_input_spectrogram(file_path) 
+            except Exception as e:
+                sg = None
+                print(f"Error loading .wav file: {e}")
+                
+        self.sg = sg        
+
+    
     def load_npy_file(self):
         # Open file dialog to select the .npy file
         file_path, _ = QFileDialog.getOpenFileName(self, "Open .npy File", "", "NumPy Files (*.npy)")
@@ -64,6 +84,7 @@ class FingerprintApp(QMainWindow):
 
             except Exception as e:
                 print(f"Error loading .npy file: {e}")
+
 
     def plot_data(self, data):
         # Clear previous plot and plot the new data
@@ -84,6 +105,11 @@ class FingerprintApp(QMainWindow):
             ax.set_ylabel("Y")
 
         self.canvas.draw()
+
+
+    def get_search_results(self):
+        matchmaker = Match_Maker(self.sg)
+        matching_songs = matchmaker.search_hashed_database()
 
 
 if __name__ == "__main__":
