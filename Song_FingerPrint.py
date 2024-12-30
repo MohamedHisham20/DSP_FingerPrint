@@ -2,7 +2,7 @@ import librosa
 import numpy as np
 from typing import Dict, List, Union
 from scipy.signal import find_peaks
-from typing import Union
+from typing import Union, Tuple
 from hash_and_search import p_hash, calculate_hash_distance
 
 real_num = Union[int, float]
@@ -84,6 +84,10 @@ class Song_FingerPrint:
         # Energy Distribution, List
         energy = np.sum(spectrogram, axis=0)
         features['energy_distribution'] = energy.tolist()
+        
+        #Shazam Spectral Peaks
+        spectral_peaks = self.__calculate_spectral_peaks(spectrogram)
+        features['spectral_peaks'] = spectral_peaks
 
         return features
     
@@ -247,7 +251,7 @@ class Song_FingerPrint:
 
             # Append (frequency bin, time bin) for each peak
             for freq_idx in peak_indices:
-                peaks.append((freq_idx, time_idx))
+                peaks.append(int(freq_idx))
         
         return peaks
     

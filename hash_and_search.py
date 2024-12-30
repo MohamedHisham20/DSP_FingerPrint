@@ -1,13 +1,13 @@
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Tuple
 import hashlib
 import numpy as np
 from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon, hamming
 
-def flatten_and_normalize(features: Dict[str, Union[float, List[float]]]):
+def flatten_and_normalize(features: Dict[str, Union[float, List[float], List[Tuple]]]):
     flattened_features = []
     
     for key, val in sorted(features.items()):
-        if isinstance(val, float):
+        if isinstance(val, float) or isinstance(val, int):
             flattened_features.append(val)
         elif isinstance(val, list):
             flattened_features.extend(val)
