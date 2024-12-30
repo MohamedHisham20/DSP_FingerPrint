@@ -2,3 +2,4 @@ task5.pdf
 .git
 .idea
 coolVenv/
+__pycache__/
