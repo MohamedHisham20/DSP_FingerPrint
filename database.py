@@ -14,6 +14,7 @@ hashed_db_json_file = 'hashed_db.json'
 
 real_number = Union[int, float]
 
+#number of songs in database
 number_of_songs = 11
 
 # normalized_database: List[Dict] = [{} for _ in range(number_of_songs)]
