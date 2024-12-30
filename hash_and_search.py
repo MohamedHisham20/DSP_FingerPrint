@@ -19,17 +19,17 @@ def flatten_and_normalize(features: Dict[str, Union[float, List[float]]]):
         
     return flattened_features.tolist()                
 
-def p_hash(features_3d: List[Dict]):
-    features_3d_hashed = []
+def p_hash(features: List[Dict]):
+    features_hashed:List[str] = []
     
-    for dimension in features_3d:
+    for dimension in features:
         dimension = flatten_and_normalize(dimension)
         dimension = str(dimension).encode()
         dimension = hashlib.sha256(dimension)
         dimension = dimension.hexdigest()
-        features_3d_hashed.append(dimension)
+        features_hashed.append(dimension)
         
-    return features_3d_hashed
+    return features_hashed
 
 def perceptual_hash(features: Dict[str, Any]) -> str:
     """

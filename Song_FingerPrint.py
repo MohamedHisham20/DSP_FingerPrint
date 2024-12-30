@@ -3,34 +3,54 @@ import numpy as np
 from typing import Dict, List, Union
 from scipy.signal import find_peaks
 from typing import Union
+from hash_and_search import p_hash, calculate_hash_distance
 
 real_num = Union[int, float]
 
 class Song_FingerPrint:
-    def __init__(self, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, sampling_rate:List=[], song_name:str="UNKNOWN"):
+    def __init__(self, sampling_rate, input_sg=None, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, song_name:str="UNKNOWN"):
         """
         sr: Sampling rate of the original audio
         index zero for song_sg, 1 for vocals, 2 for ,music
         """
-        self.__song_sampling_rate = sampling_rate[0]
-        self.__vocals_sampling_rate = sampling_rate[1]
-        self.__music_sampling_rate = sampling_rate[2]
+        if isinstance(sampling_rate, list):
+            self.__song_sampling_rate = sampling_rate[0]
+            self.__vocals_sampling_rate = sampling_rate[1]
+            self.__music_sampling_rate = sampling_rate[2]
         
-        self.__song_sg = song_spectrogram
-        self.__vocals_sg = vocals_spectrogram
-        self.__music_sg  = music_spectrogram
+            self.__song_sg = song_spectrogram
+            self.__vocals_sg = vocals_spectrogram
+            self.__music_sg  = music_spectrogram
+            
+            self.__features:list[Dict]= [{} for _ in range(3)]
+            
+        elif isinstance(sampling_rate, real_num):
+            self.__input_sg = input_sg
+            self.__input_sr = sampling_rate
+            self.__input_features:Dict = {}    
         
         self.__song_name = song_name
-        
-        self.__features:list[Dict]= [{} for _ in range(3)]
-        
+    
         self.__extract_features()
+        
+        self.__hashed_features = self.__hash_features()
         
     def get_song_name(self):
         return self.__song_name
        
     def get_raw_features(self):
-        return self.__features
+        if self.__input_sg == None:       
+            return self.__features
+        
+        return self.__input_features
+    
+    def get_hashed_features(self):
+        hashed_strings = []
+        for key, val in self.__hashed_features.items():
+            if not (key=='song_name'): hashed_strings.append(val)
+            
+        return hashed_strings   
+    
     
     def __extract_general_features(self, spectrogram:np.ndarray, sampling_rate):
         """
@@ -192,17 +212,20 @@ class Song_FingerPrint:
         #energy envelope 
                
     def __extract_features(self):
-        if self.__song_sg is not None:
-            features = self.__extract_general_features(self.__song_sg, self.__song_sampling_rate)
-            self.__features[0] = features
-        
-        if self.__vocals_sg is not None:
-            features = self.__extract_general_features(self.__vocals_sg,self.__vocals_sampling_rate)
-            self.__features[1] = features
-        
-        if self.__music_sg is not None:
-            features = self.__extract_general_features(self.__music_sg, self.__music_sampling_rate)
-            self.__features[2] = features
+        if self.__input_features == None:
+            if self.__song_sg is not None:
+                features = self.__extract_general_features(self.__song_sg, self.__song_sampling_rate)
+                self.__features[0] = features
+            
+            if self.__vocals_sg is not None:
+                features = self.__extract_general_features(self.__vocals_sg,self.__vocals_sampling_rate)
+                self.__features[1] = features
+            
+            if self.__music_sg is not None:
+                features = self.__extract_general_features(self.__music_sg, self.__music_sampling_rate)
+                self.__features[2] = features
+        else:
+            self.__input_features = self.__extract_general_features(self.__input_sg, self.__input_sr)        
     
     def __calculate_spectral_peaks(self, spectrogram):
         """
@@ -266,5 +289,22 @@ class Song_FingerPrint:
         
         return min_peak_height, neighborhood_size
 
- 
-  
+    def __hash_features(self):
+        if self.__input_sg == None:
+            hashed_strings = p_hash(self.get_raw_features())
+            if len(hashed_strings==3):
+                temp = {
+                    "song_name":self.__song_name,
+                    "song_features":hashed_strings[0],
+                    "vocals_features":hashed_strings[1],
+                    "music_features":hashed_strings[2]
+                }
+        else: 
+            hashed_strings = p_hash([self.__input_features])
+            temp = {
+                "song_name":self.__song_name,
+                "input_features":hashed_strings[0]
+            }   
+        
+        return temp     
+                

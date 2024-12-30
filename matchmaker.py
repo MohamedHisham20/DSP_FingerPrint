@@ -6,19 +6,9 @@ import database
 import librosa
 import os
 import json_ctrl
-from pydub import AudioSegment
-from pydub.playback import play
-import pygame
+
 
 path = "Data/Test/songs/wen_elkhael.wav"
-def play_audio():
-    pygame.mixer.init()
-    
-    global path
-    pygame.mixer.music.load(path)
-    
-    pygame.mixer.music.play()
-
 
 class Match_Maker:
     """
@@ -42,8 +32,11 @@ Accepts the spectrogram of the audio under investigation
     def get_top_matches(self, display_n=1):        
         return self.__top_matches[:display_n]
             
-    def get_hashed_fingerprint(self):
-        return self.__hashed_fingerprint
+    def get_hashed_fingerprint(self, get_song_name = True):
+        if get_song_name: return self.__hashed_fingerprint
+
+        return {key: value for key, value in self.__hashed_fingerprint.items() if key != 'song_name'}
+            
     
     def get_audio_file_path(self):
         return self._audio_path    
@@ -56,45 +49,28 @@ Accepts the spectrogram of the audio under investigation
         audio_data = audio_data[:sample_rate * 30]
         
         sg = np.abs(librosa.stft(audio_data))
-        sg = librosa.amplitude_to_db(sg, ref=np.max)
+        sg = librosa.amplitude_to_db(sg, ref=1)
         sg = np.abs(sg)
         
         file_name:str = os.path.basename(self._audio_path)
-        sr = [sample_rate, sample_rate, sample_rate]
         
-        finger_print = Song_FingerPrint(sg,sg,sg,sr,file_name)
+        finger_print = Song_FingerPrint(input_sg=sg, sampling_rate=sample_rate)
         
-        raw_features_3d = finger_print.get_raw_features()
+        raw_features = finger_print.get_raw_features()
         
-        hashed_features_3d = hash_and_search.p_hash(raw_features_3d)
+        hashed_features = hash_and_search.p_hash(raw_features)
         
         hashed_fingerprint = {
             "song_name": file_name,
-            "song_features": hashed_features_3d[0],
-            "vocals_features": hashed_features_3d[1],
-            "music_features": hashed_features_3d[2]
+            'features':hashed_features 
         }
         
         return hashed_fingerprint
 
     def __search_hashed_database(self):
-        distances:List[Dict[str, float]] = []
-        three_hashed_components = []
-        
-        for key, val in self.__hashed_fingerprint.items():
-            if not (key=="song_name"): three_hashed_components.append(val)
-        
-        for component in three_hashed_components:
-            for hashed_fp in self.__hashed_database:
-                temp = self.append_hashing_distance_dict(component, hashed_fp["song_features"], "full", hashed_fp["song_name"])
-                distances.append(temp)
-                
-                temp = self.append_hashing_distance_dict(component, hashed_fp["vocals_features"], "vocals", hashed_fp["song_name"])
-                distances.append(temp) 
-                
-                temp = self.append_hashing_distance_dict(component, hashed_fp["music_features"], "instruments", hashed_fp["song_name"])
-                distances.append(temp)                 
+        distances:List[Dict[str, float]] = []        
 
+        for dimension in self.get_hashed_fingerprint(get_song_name=False):
         
         distances = sorted(distances, key=lambda x: x["distance"], reverse=True)
         return distances
@@ -112,7 +88,7 @@ Accepts the spectrogram of the audio under investigation
     
 def main():
     mk = Match_Maker()
+    json_ctrl.clear_json_file('matches.json')
     json_ctrl.write_in_json_file('matches.json', mk.get_top_matches(20)) 
-    play_audio()
     
 main()           

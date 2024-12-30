@@ -9,6 +9,9 @@ from pprint import pprint
 import json_ctrl
 from hash_and_search import perceptual_hash, p_hash
 
+database_json_file = 'db.json'
+hashed_db_json_file = 'hashed_db.json'
+
 real_number = Union[int, float]
 
 number_of_songs = 11
@@ -21,7 +24,6 @@ number_of_songs = 11
 
 # total_mfccs: List[List[List]] = [[] for _ in range(3)]
 # total_chroma_peaks: List[List[List]] = [[] for _ in range(3)]
-
 
 def generate_spectrograms(input_folder_path, get_song_name: bool = False):
     """
@@ -55,14 +57,14 @@ if get_song_name_is true, the song name and the audio file sampling rate are als
     
     return spectrograms
 
-def create_raw_database():
+def create_database():
     """
-This function creates populates a global variable named database with the raw data\n
-this function however does not write the data in json file.\n
-to write the data in json file use function write_raw_data().    
+    return a tuple of the raw and the hashed database
     """
     global number_of_songs
+    
     database:List[Dict] = [{} for _ in range(number_of_songs)]
+    hashed_database: List[Dict] = [{} for _ in range(number_of_songs)]
         
     songs_spectrograms: List[Dict] = generate_spectrograms('Data/original_data/songs', True)
     vocals_spectrograms: List[Dict] = generate_spectrograms('Data/original_data/vocals')
@@ -85,127 +87,27 @@ to write the data in json file use function write_raw_data().
         # Features Extraction Processed in the Song_FingerPrint Class
         song_fingerprint = Song_FingerPrint(ssg, vsg, msg, sr, song_name)
         
-        features = song_fingerprint.get_raw_features()
-        
-        #loop required for normalization
-        # for i in range(3):
-        #     total_spectral_centroids[i].append(features[i]["spectral_centroid"])
-        #     total_pitches[i].append(features[i]["pitch"])
-        #     total_HNRs[i].append(features[i]["HNR"])
-        #     total_chroma_peaks[i].append(features[i]["chroma"])
-        #     total_mfccs[i].append(features[i]["mfccs"])
+        raw_features = song_fingerprint.get_raw_features()
+        hashed_features = song_fingerprint.get_hashed_features()
             
-        database[i] = {"song_name":song_name, "features":features}
+        database[i] = {"song_name":song_name, "features":raw_features}
+        hashed_database[i] = {'song_name':song_name,
+                              'song_features':hashed_features[0],
+                              'vocals_features':hashed_features[1],
+                              'music_features':hashed_features[2]
+                              }
             
-    return database    
+    return database, hashed_database    
 
-def create_hashed_database():
-    """
-return the hashed form of the database.\n
-each song will be a dict with for key, value pairs.\n
-keys: song_name, song_features, vocals_features, music_features.\n
-Data type of all values is string.
-    """
-    database = create_raw_database()
+def write_data():
+    db, h_db = create_database()
     
-    print("raw created successfully")
-    
-    global number_of_songs
-    hashed_database: List[Dict]= [{} for _ in range(number_of_songs)]
-    
-    i = 0
-    for song_fp in database:
-        hashed_database[i]['song_name'] = song_fp['song_name']
-        features_3d = song_fp["features"]
-        
-        features_3d_hashed = p_hash(features_3d)
-            
-        hashed_database[i]['song_features'] = features_3d_hashed[0]
-        hashed_database[i]['vocals_features'] = features_3d_hashed[1]
-        hashed_database[i]['music_features'] = features_3d_hashed[2]    
-        i+=1
-
-    return hashed_database
-
-def normalize_database():
-    normalize(total_spectral_centroids)
-    normalize(total_mfccs, True, "mfccs")
-    normalize(total_pitches, "pitch")
-    normalize(total_HNRs)
-    normalize(total_chroma_peaks, True, "chroma")
-
-def create_normalized_database():
-    database = create_raw_database()
-    normalize_database()
-    
-    #create normalized database
-    for k in range(len(normalized_database)):
-        
-        normalized_database[k]["song_name"] = database[k]["song_name"]
-        normalized_database[k]["features"] = [{} for _ in range(3)]
-        features_list = normalized_database[k]["features"]
-        
-        for j in range(len(features_list)):
-            dictionary = features_list[j]
-            
-            dictionary["spectral_centroid"] = total_spectral_centroids[k][j]
-            dictionary["mfccs"] = total_mfccs[k][j]
-            dictionary["pitch"] = total_pitches[k][j]
-            dictionary["HNR"] = total_HNRs[k][j]
-            dictionary["chroma"] = total_chroma_peaks[k][j]
-                    
-def normalize(feature_3d: List):
-    for list in feature_3d:
-        if complex: #list is a list of lists (Complex Feature like MFCCs)
-           min_max_complex_normalize(list) 
-        else:
-            min_val = min(list)
-            max_val = max(list)
-            min_max_normalize(min_val, max_val, list)
-
-def write_raw_data():
-    database = create_raw_database()
-    json_ctrl.write_in_json_file('db_test.json', database)
-        
-def write_normalized_data():
-    json_ctrl.write_in_json_file('norm_data.json', normalize_database)       
-    
-def write_hashed_data():
-    hdb = create_hashed_database()
-    json_ctrl.write_in_json_file('hashed_db.json', hdb)
-
-def min_max_complex_normalize(list_of_lists: List[List[real_number]]):
-    # if any(len(inner_list) == 0 for inner_list in list_of_lists):
-    #     raise ValueError("One or more inner lists are empty")
-    
-    list_of_arrays = [np.array(inner_list) for inner_list in list_of_lists]
-        
-    try: matrix = np.stack(list_of_arrays)
-    except ValueError as e: raise ValueError(f"Error stacking arrays: {e}")
-    
-    print(f"Matrix Shape: {matrix.shape}")  
-    
-    min_vals = matrix.min(axis=0)
-    max_vals = matrix.max(axis=0)
-    
-    for i in range(matrix.shape[1]):
-            if max_vals[i] != min_vals[i]:
-                matrix[:, i] = (matrix[:, i] - min_vals[i]) / (max_vals[i] - min_vals[i])
-            else:
-                matrix[:, i] = 0
-    # Update the original sublists with normalized values
-    for j in range(len(list_of_lists)):
-        list_of_lists[j][:] = matrix[j].tolist()
-
-def min_max_normalize(min, max, list):
-    """
-x_norm = (x-x_min) / (x_max-x_min)    
-    """
-    for i in range(len(list)):
-        list[i] = (list[i] - min) / (max-min)   
-
+    json_ctrl.write_in_json_file('db.json', db)
+    json_ctrl.write_in_json_file('hashed_db.json', h_db)
 
 def main():
-    write_hashed_data()
+    json_ctrl.clear_json_file(database_json_file)
+    json_ctrl.clear_json_file(hashed_db_json_file)
+    write_data()
     
 main()    
