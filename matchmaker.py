@@ -91,6 +91,8 @@ Accepts the spectrogram of the audio under investigation
         
         return temp
     
+    def mix_audio_signals():
+
 def main():
     mk = Match_Maker()
     json_ctrl.clear_json_file('matches.json')
