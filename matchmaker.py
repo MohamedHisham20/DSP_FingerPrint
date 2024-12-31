@@ -36,7 +36,7 @@ Accepts the spectrogram of the audio under investigation
     def get_all_matches(self):
         return self.__matches
     
-    def get_top_matches(self, display_n=1):        
+    def get_top_matches(self, display_n=5):        
         return self.__matches[:display_n]
             
     def get_hash_str(self)->str:
@@ -91,7 +91,8 @@ Accepts the spectrogram of the audio under investigation
         
         return temp
     
-    def mix_audio_signals():
+    def mix_audio_signals(self, path1:str, path2:str):
+        pass
 
 def main():
     mk = Match_Maker()
