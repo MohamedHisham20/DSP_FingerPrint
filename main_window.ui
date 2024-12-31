@@ -946,7 +946,7 @@ QLabel#inTotalLabel, QLabel#outTotalLabel, QLabel#recordCountLabel
                </size>
               </property>
               <property name="text">
-               <string>Save</string>
+               <string>Mix</string>
               </property>
              </widget>
             </item>

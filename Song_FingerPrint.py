@@ -3,7 +3,7 @@ import numpy as np
 from typing import Dict, List, Union
 from scipy.signal import find_peaks
 from typing import Union, Tuple
-from hash_and_search import p_hash, calculate_hash_distance
+from processing_and_searching import p_hash, calculate_hash_distance
 
 real_num = Union[int, float]
 
