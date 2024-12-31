@@ -14,10 +14,12 @@ class Match_Maker:
     """
 Accepts the spectrogram of the audio under investigation
     """
-    def __init__(self, audio=None, mix_sr=None,  audio_file_path: str = None, path2:str = None,  mix:bool = False):        
-        self._audio_path = audio_file_path
-        self.__audio = audio
-        self.__mix_sr =mix_sr
+    def __init__(self, path1:str, path2:str = None,  mix:bool = False):        
+        
+        self.__audio1_path1 = path1
+        self.__audio1_path2 = path2
+        
+        
         
         self.__hashed_fingerprint = self.__create_hashed_form()
         self.__raw_database, self.__hashed_database = database.create_database()
@@ -39,14 +41,10 @@ Accepts the spectrogram of the audio under investigation
     def get_hash_str(self)->str:
         return self.__hashed_fingerprint['hash_str']
             
-    def get_audio_file_path(self):
-        return self._audio_path    
+       return self._audio_path    
     
     def __create_hashed_form(self):
-        if not(audio_file_path==None): 
-            audio_file_path = os.path.normpath(audio_file_path)
-            audio_data, sample_rate = processing_and_searching.extract_audio_signal(audio_file_path)
-        else:
+        if          audio_data, sample_rate = processing_and_searching.extract_audise:
             audio_data, sample_rate = self.__audio, self.__mix_sr
         
         

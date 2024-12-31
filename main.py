@@ -73,7 +73,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.ui.play_song_btn_2.text() == "▶":
                 self.ui.play_song_btn_2.setText("◻")
                 self.player_mix1.setMedia(QMediaContent(QUrl.fromLocalFile(self.mix_song1)))
-                self.player_mix1.play()
+                self.player_mix1.play() 
             else:
                 self.ui.play_song_btn_2.setText("▶")
                 self.player_mix1.stop()
