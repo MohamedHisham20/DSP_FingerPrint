@@ -1,9 +1,10 @@
-from typing import List, Dict, Any, Union, Tuple
+from typing import List, Dict, Any, Union, Tuple, Set
 import hashlib
 import numpy as np
 from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon, hamming
 import os
 import librosa
+from scipy.stats import pearsonr
 
 def peak_normalize(data:np.ndarray):
     max_val = np.max(data)
@@ -14,10 +15,10 @@ def min_max_normalize(data:np.ndarray):
     min_val = np.min(data)
     max_val = np.max(data)
     
-    data = data - min_val / (max_val - min_val)
+    data = (data - min_val) / (max_val - min_val)
     return data
 
-def extract_audio_signal(file_path:str,normalize:bool = True):
+def extract_audio_signal(file_path:str):
     """
     return the normalized audio signal with its native sampling rate.\n
     Peak Normalization is applied if required.
@@ -28,37 +29,50 @@ def extract_audio_signal(file_path:str,normalize:bool = True):
     if len(audio_data.shape) > 1: audio_data = np.mean(audio_data, axis=1)
     audio_data = audio_data[:sample_rate * 30]
     
-    if normalize: audio_data = peak_normalize(audio_data)
+    audio_data = peak_normalize(audio_data)
     
     return audio_data, sample_rate
 
 def mix_audio(path1:str, path2:str, w1:float, w2:float):
     """
-    Return the mixed audio and its normalized form for further processing
+    Return the normalizaed mixed signal with the common sampling rate
     w is the weight assigned to audio1. audio2 will have 1-w.\n
     0 < w < 1
     """
-    audio1 = extract_audio_signal(path1, False)
-    audio2 = extract_audio_signal(path2, False)
+    path1 = os.path.normpath(path1)
+    path2 = os.path.normpath(path2)
+    
+    audio1, sr1 = extract_audio_signal(path1, False)
+    audio2, sr2 = extract_audio_signal(path2, False)
+   
+    if sr1 > sr2: 
+        audio2 = librosa.resample(y=audio2, orig_sr=sr2, target_sr=sr1)
+    elif sr2 > sr1:
+        audio1 = librosa.resample(y=audio1, orig_sr=sr1, target_sr=sr2)
+    
+    common_sr = max(sr1, sr2)       
     
     mix = (w1*audio1) + (w2*audio2)
+    mix = peak_normalize(mix)
     
-    return mix, peak_normalize(mix)
+    return mix, common_sr
     
+def get_audio_and_sampling_rate(path1, path2 = None, mix:bool=False, w1 = 0):
+    if mix:
+        return extract_audio_signal(path1)
+    return mix_audio(path1, path2, w1, 1-w1)    
 
-def generate_spectrogram(audio_data:np.ndarray, normalize:bool = True):
+def generate_spectrogram(audio_data:np.ndarray):
     """
     return normalized spectrogram in decibel scale.\n
     min-max normalization is applied if required.
     """
     sg = np.abs(librosa.stft(audio_data))
     sg = librosa.amplitude_to_db(sg, ref=1)
-    
-    if normalize: sg = min_max_normalize(sg)
+    sg = min_max_normalize(sg)
         
     return sg
     
-
 def flatten_and_normalize(features: Dict[str, Union[float, List[float], List[Tuple]]]):
     flattened_features = []
     
@@ -164,50 +178,25 @@ def calculate_hash_distance(hash1: str, hash2: str, distance_metric: str = 'h') 
         raise ValueError(
             "Invalid distance metric. Supported metrics: 'cosine', 'euclidean', 'cityblock', 'jensenshannon'.")
 
-# def calc_hamming_distance(hash1: str, hash2: str):
-#     if not (len(hash1)==len(hash2)):
-#         print("Hamming Distances require two hashed to be of equal length")
-#         return
+def calc_shared_spectral_peaks_num(peaks1: Set, peaks2: Set):
+    """
+    return a similarity ratio incorporating how similar are the spectral peaks
+    """
+    shared_peaks = peaks1.intersection(peaks2)
+    unique_peaks = peaks1.union(peaks2)
     
-#     bin_hash1 = bin(int(hash1, 16))[2:].zfill(256)
-#     bin_hash2 = bin(int(hash2, 16))[2:].zfill(256)
-    
-#     return sum(c1 != c2 for c1, c2 in zip(bin_hash1, bin_hash2))
+    similarity_ratio = len(shared_peaks) / len(unique_peaks)
+    return similarity_ratio
+
+def calc_energy_envelope_correlation(e1: List, e2: List):
+    """
+    return a metric that indicates how similar the energy distribution is
+    """ 
+    correlation, _ = pearsonr(e1, e2)
+    return correlation
 
 def main():
-    # Create an example database
-    database = []
-    for i in range(10):
-        song_name = f"Song_{i}"
-        song_spectrogram = np.random.rand(100, 100)
-        vocals_spectrogram = np.random.rand(100, 100)
-        music_spectrogram = np.random.rand(100, 100)
+    a, sr = extract_audio_signal('Data/original_data/songs/FE!N.wav')
+    generate_spectrogram(a)
 
-        song = {
-            "song_name": song_name,
-            "features": [
-                {"song_spectrogram": song_spectrogram},
-                {"vocals_spectrogram": vocals_spectrogram},
-                {"music_spectrogram": music_spectrogram}
-            ]
-        }
-        database.append(song)
-
-    # Generate a hashed database
-    hashed_database = generate_hashed_database(database)
-
-    # Create a query song
-    query_features = {
-        "song_spectrogram": np.random.rand(100, 100),
-        "vocals_spectrogram": np.random.rand(100, 100),
-        "music_spectrogram": np.random.rand(100, 100)
-    }
-
-    # Search the hashed database
-    matching_songs = search_hashed_database(query_features, hashed_database)
-
-    print(f"Matching songs: {matching_songs}")
-
-if __name__ == "__main__":
-    main()
-# Output: Matching songs: [{'song_name': 'Song_2', 'song_features_hash': ['b3c9a5d3e7d3f5d5b ... 3e7d3f5d5b']}]
+main()

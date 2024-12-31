@@ -3,21 +3,23 @@ import numpy as np
 from typing import Dict, List, Union
 from scipy.signal import find_peaks
 from typing import Union, Tuple
-from processing_and_searching import p_hash, calculate_hash_distance
+import processing_and_searching as ps
 
 real_num = Union[int, float]
 
 class Song_FingerPrint:
-    def __init__(self, sampling_rate:List=[0 for _ in range(3)], input_sampling_rate:real_num=None, input_sg:np.ndarray=None, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, song_name:str="UNKNOWN", mode:str="db"):
+    def __init__(self, song_name:str, sampling_rate:List=[0 for _ in range(3)], input_sampling_rate:real_num=None, input_sg:np.ndarray=None, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, mode:str="db"):
             """
-            sr: Sampling rate of the original audio\n
-            index zero for song_sg, 1 for vocals, 2 for ,music\n
-            mode is defaulted to db for creating the database.\n
-            use mode='in' for input files
+            mode can db or in. db is default for creating the database.\n
+            for db mode use parameters sampling_rate, song_spectrogram, vocals_spectrogram, music_spectrogram.\n
+            for single input of audio mix us mode = 'in'.\n
+            for in mode use input_sampling_rate and input_sg
+            
             """
             self.__song_name = song_name
             self.__mode = mode
             
+            # db mode variables
             self.__song_sampling_rate = sampling_rate[0]
             self.__vocals_sampling_rate = sampling_rate[1]
             self.__music_sampling_rate = sampling_rate[2]
@@ -28,6 +30,7 @@ class Song_FingerPrint:
 
             self.__features:list[Dict]= [{} for _ in range(3)]
 
+            # in mode variables
             self.__input_sg = input_sg
             self.__input_sr = input_sampling_rate
             self.__input_features:Dict = {} 
@@ -45,7 +48,13 @@ class Song_FingerPrint:
         return self.__features
     
     def get_hashed_features(self):
-        return self.__hashed_features   
+        return self.__hashed_features
+    
+    def __get_peaks_set(self):
+        return self.__peaks_set
+    
+    def __get_energy_envelope(self):
+        return self.__energy_envelope          
       
     def __extract_general_features(self, spectrogram:np.ndarray, sampling_rate):
         """
@@ -55,21 +64,21 @@ class Song_FingerPrint:
         power_spec = spectrogram ** 2
         
         # Extract Spectral Bandwidth, scalar, works on audio or spectrogram
-        spectral_bandwidth = librosa.feature.spectral_bandwidth(S=spectrogram, sr=sampling_rate)
-        features['spectral_bandwidth'] = float(spectral_bandwidth.mean())
+        # spectral_bandwidth = librosa.feature.spectral_bandwidth(S=spectrogram, sr=sampling_rate)
+        # features['spectral_bandwidth'] = float(spectral_bandwidth.mean())
         
-        # Extract Spectral Rolloff, scalar, works on audio or spectrogram
-        spectral_rolloff = librosa.feature.spectral_rolloff(S=spectrogram, sr=sampling_rate)
-        features['spectral_rolloff'] = float(spectral_rolloff.mean())
+        # # Extract Spectral Rolloff, scalar, works on audio or spectrogram
+        # spectral_rolloff = librosa.feature.spectral_rolloff(S=spectrogram, sr=sampling_rate)
+        # features['spectral_rolloff'] = float(spectral_rolloff.mean())
         
-        # Mean Centroid, Scalar, works on audio or spectrogram
-        spectral_centroid = librosa.feature.spectral_centroid(S=power_spec, sr=sampling_rate).mean()
-        spectral_centroid = float(spectral_centroid)
-        features['spectral_centroid'] = spectral_centroid
+        # # Mean Centroid, Scalar, works on audio or spectrogram
+        # spectral_centroid = librosa.feature.spectral_centroid(S=power_spec, sr=sampling_rate).mean()
+        # spectral_centroid = float(spectral_centroid)
+        # features['spectral_centroid'] = spectral_centroid
 
-        # Spectral Contrast, List, works on audio or spectrogram
-        spectral_contrast = librosa.feature.spectral_contrast(S=spectrogram, sr=sampling_rate)
-        features['spectral_contrast'] = spectral_contrast.mean(axis=1).tolist()
+        # # Spectral Contrast, List, works on audio or spectrogram
+        # spectral_contrast = librosa.feature.spectral_contrast(S=spectrogram, sr=sampling_rate)
+        # features['spectral_contrast'] = spectral_contrast.mean(axis=1).tolist()
         
         # Extract Zero Crossing Rate, float, works on the audio singal
         # zero_crossing_rate = librosa.feature.zero_crossing_rate(y=librosa.istft(spectrogram))
@@ -81,12 +90,15 @@ class Song_FingerPrint:
         for i in range(len(mfccs)): mfccs[i] = float(mfccs[i])
         features['mfccs'] = mfccs
         
-        # Energy Distribution, List
+        # Min-Max Normalized Energy Distribution, List
         energy = np.sum(spectrogram, axis=0)
-        features['energy_distribution'] = energy.tolist()
+        energy = energy.tolist()
+        energy = ps.min_max_normalize(energy)
+        self.__energy_envelope = features['energy_envelope'] = energy
         
         #Shazam Spectral Peaks
-        spectral_peaks = self.__calculate_spectral_peaks(spectrogram)
+        spectral_peaks, spectral_peaks_set = self.__calculate_spectral_peaks(spectrogram)
+        self.__peaks_set = spectral_peaks_set
         features['spectral_peaks'] = spectral_peaks
 
         return features
@@ -236,11 +248,12 @@ class Song_FingerPrint:
             neighborhood_size (int): Size of the local neighborhood to identify peaks.
 
         Returns:
-            List of spectral peaks [(freq_bin, time_bin), ...].
+            List of spectral peaks  + set of [(freq_bin, time_bin), ...].
         """
         min_peak_height, neighborhood_size = self.__obtain_min_peaks_and_neighborhood_size(spectrogram)
         
         peaks = []
+        peaks_set = set()
         # Iterate over time frames (columns in the spectrogram)
         for time_idx in range(spectrogram.shape[1]):
             # Extract the frequency magnitudes for the current time frame
@@ -251,9 +264,10 @@ class Song_FingerPrint:
 
             # Append (frequency bin, time bin) for each peak
             for freq_idx in peak_indices:
+                peaks_set.add(int(freq_idx), time_idx)
                 peaks.append(int(freq_idx))
         
-        return peaks
+        return peaks, peaks_set
     
     def __obtain_min_peaks_and_neighborhood_size(self, spectrogram, fft_size:int = 2048):
         """
@@ -290,7 +304,7 @@ class Song_FingerPrint:
 
     def __hash_features(self):
         if self.__mode == 'db':
-            hashed_strings = p_hash(self.get_raw_features())
+            hashed_strings = ps.p_hash(self.get_raw_features())
             if len(hashed_strings)==3:
                 temp = {
                     "song_features":hashed_strings[0],
@@ -298,7 +312,7 @@ class Song_FingerPrint:
                     "music_features":hashed_strings[2]
                 }
         else: 
-            hashed_strings = p_hash([self.__input_features])
+            hashed_strings = ps.p_hash([self.__input_features])
             temp = {
                 "hash_str":hashed_strings[0]
             }   

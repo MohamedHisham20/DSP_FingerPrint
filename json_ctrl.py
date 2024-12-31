@@ -16,3 +16,5 @@ def write_in_json_file(file_path:str, data, indent=4):
         
 clear_json_file(matches_json)
 clear_json_file(input_hash_json)
+clear_json_file(hashed_db_path)
+clear_json_file(raw_data_path)

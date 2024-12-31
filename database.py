@@ -7,7 +7,7 @@ from copy import copy
 import json
 from pprint import pprint
 import json_ctrl
-from processing_and_searching import extract_audio_signal, generate_spectrogram
+import processing_and_searching as ps
 
 database_json_file = 'db.json'
 hashed_db_json_file = 'hashed_db.json'
@@ -38,9 +38,9 @@ if get_song_name_is true, the song name and the audio file sampling rate are als
         if file.endswith('.wav'):
             file_path = os.path.join(input_folder_path, file)
 
-            audio_data, sample_rate = extract_audio_signal(file_path)
+            audio_data, sample_rate = ps.extract_audio_signal(file_path)
 
-            S_db = generate_spectrogram(audio_data)
+            S_db = ps.generate_spectrogram(audio_data)
 
             if get_song_name:
                 spectrograms.append({'song_name': file, 'SG': S_db, 'SR':sample_rate})
