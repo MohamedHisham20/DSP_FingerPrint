@@ -1035,7 +1035,7 @@ QLabel#inTotalLabel, QLabel#outTotalLabel, QLabel#recordCountLabel
             </property>
             <layout class="QHBoxLayout" name="mixingLayout_3">
              <item>
-              <widget class="QSlider" name="horizontalSlider">
+              <widget class="QSlider" name="weighting">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -1059,6 +1059,19 @@ QLabel#inTotalLabel, QLabel#outTotalLabel, QLabel#recordCountLabel
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <item>
+             <widget class="QPushButton" name="Mix_btn">
+              <property name="maximumSize">
+               <size>
+                <width>150</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Mix</string>
+              </property>
+             </widget>
+            </item>
             <item>
              <widget class="QPushButton" name="save_mix_3">
               <property name="minimumSize">
@@ -1219,7 +1232,7 @@ QLabel#inTotalLabel, QLabel#outTotalLabel, QLabel#recordCountLabel
  <resources/>
  <connections>
   <connection>
-   <sender>horizontalSlider</sender>
+   <sender>weighting</sender>
    <signal>valueChanged(int)</signal>
    <receiver>mixSpinBox_3</receiver>
    <slot>setValue(int)</slot>
@@ -1237,7 +1250,7 @@ QLabel#inTotalLabel, QLabel#outTotalLabel, QLabel#recordCountLabel
   <connection>
    <sender>mixSpinBox_3</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>horizontalSlider</receiver>
+   <receiver>weighting</receiver>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
