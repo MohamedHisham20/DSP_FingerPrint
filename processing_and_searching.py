@@ -2,6 +2,62 @@ from typing import List, Dict, Any, Union, Tuple
 import hashlib
 import numpy as np
 from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon, hamming
+import os
+import librosa
+
+def peak_normalize(data:np.ndarray):
+    max_val = np.max(data)
+    data = data / max_val
+    return data
+
+def min_max_normalize(data:np.ndarray):
+    min_val = np.min(data)
+    max_val = np.max(data)
+    
+    data = data - min_val / (max_val - min_val)
+    return data
+
+def extract_audio_signal(file_path:str,normalize:bool = True):
+    """
+    return the normalized audio signal with its native sampling rate.\n
+    Peak Normalization is applied if required.
+    """
+    file_path = os.path.normpath(file_path)
+    audio_data, sample_rate = librosa.load(file_path, sr=None)
+    
+    if len(audio_data.shape) > 1: audio_data = np.mean(audio_data, axis=1)
+    audio_data = audio_data[:sample_rate * 30]
+    
+    if normalize: audio_data = peak_normalize(audio_data)
+    
+    return audio_data, sample_rate
+
+def mix_audio(path1:str, path2:str, w1:float, w2:float):
+    """
+    Return the mixed audio and its normalized form for further processing
+    w is the weight assigned to audio1. audio2 will have 1-w.\n
+    0 < w < 1
+    """
+    audio1 = extract_audio_signal(path1, False)
+    audio2 = extract_audio_signal(path2, False)
+    
+    mix = (w1*audio1) + (w2*audio2)
+    
+    return mix, peak_normalize(mix)
+    
+
+def generate_spectrogram(audio_data:np.ndarray, normalize:bool = True):
+    """
+    return normalized spectrogram in decibel scale.\n
+    min-max normalization is applied if required.
+    """
+    sg = np.abs(librosa.stft(audio_data))
+    sg = librosa.amplitude_to_db(sg, ref=1)
+    
+    if normalize: sg = min_max_normalize(sg)
+        
+    return sg
+    
 
 def flatten_and_normalize(features: Dict[str, Union[float, List[float], List[Tuple]]]):
     flattened_features = []

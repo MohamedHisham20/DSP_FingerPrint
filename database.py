@@ -7,7 +7,7 @@ from copy import copy
 import json
 from pprint import pprint
 import json_ctrl
-from hash_and_search import perceptual_hash, p_hash
+from processing_and_searching import extract_audio_signal, generate_spectrogram
 
 database_json_file = 'db.json'
 hashed_db_json_file = 'hashed_db.json'
@@ -37,19 +37,10 @@ if get_song_name_is true, the song name and the audio file sampling rate are als
     for file in files:
         if file.endswith('.wav'):
             file_path = os.path.join(input_folder_path, file)
-            file_path = os.path.normpath(file_path)
-            audio_data, sample_rate = librosa.load(file_path, sr=None)
 
-            # Ensure data is mono for simplicity
-            if len(audio_data.shape) > 1:
-                audio_data = np.mean(audio_data, axis=1)
+            audio_data, sample_rate = extract_audio_signal(file_path)
 
-            # Trim to first 20 seconds
-            audio_data = audio_data[:sample_rate * 30]
-
-            S = np.abs(librosa.stft(audio_data))
-            S_db = librosa.amplitude_to_db(S, ref=1)
-            S_db = np.abs(S_db)
+            S_db = generate_spectrogram(audio_data)
 
             if get_song_name:
                 spectrograms.append({'song_name': file, 'SG': S_db, 'SR':sample_rate})

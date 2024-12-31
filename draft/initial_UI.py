@@ -8,7 +8,6 @@ from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import librosa
 from matchmaker import Match_Maker
-from spectrogram_generator import SG_Generator
 
 
 class FingerprintApp(QMainWindow):

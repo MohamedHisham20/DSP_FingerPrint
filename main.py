@@ -3,6 +3,7 @@ import sys
 from song_widget import ScrollableSongList
 from PyQt5.QtCore import QUrl
 from PyQt5.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaContent
+#from matchmaker import Match_Maker
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -29,6 +30,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mix_song2 = None
         # self.player.setMedia(QMediaContent(QUrl.fromLocalFile(wav_file)))
         self.ui.show()
+    
     def connections(self):
         self.ui.choose_file.clicked.connect(lambda: self.choose_audio_file(1))
         self.ui.play_song_btn.clicked.connect(lambda: self.play_stop_song(1))
@@ -79,6 +81,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 player.stop()
         else:
             print("No song selected")
+            
+    def get_top_matches(self):
+        pass
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)

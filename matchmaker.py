@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Dict, List
 from Song_FingerPrint import Song_FingerPrint
-from hash_and_search import calculate_hash_distance
+import processing_and_searching
 import database
 import librosa
 import os
@@ -14,13 +14,10 @@ class Match_Maker:
     """
 Accepts the spectrogram of the audio under investigation
     """
-    def __init__(self, audio_file_path: str = path):
-        if not audio_file_path.endswith('wav'):
-            print("audio files must have .wav extension")
-            return
-        
-        audio_file_path = os.path.normpath(audio_file_path)
+    def __init__(self, audio=None, mix_sr=None,  audio_file_path: str = None, path2:str = None,  mix:bool = False):        
         self._audio_path = audio_file_path
+        self.__audio = audio
+        self.__mix_sr =mix_sr
         
         self.__hashed_fingerprint = self.__create_hashed_form()
         self.__raw_database, self.__hashed_database = database.create_database()
@@ -46,7 +43,12 @@ Accepts the spectrogram of the audio under investigation
         return self._audio_path    
     
     def __create_hashed_form(self):
-        audio_data, sample_rate = librosa.load(self._audio_path, sr=None)
+        if not(audio_file_path==None): 
+            audio_file_path = os.path.normpath(audio_file_path)
+            audio_data, sample_rate = processing_and_searching.extract_audio_signal(audio_file_path)
+        else:
+            audio_data, sample_rate = self.__audio, self.__mix_sr
+        
         
         if len(audio_data.shape) > 1: audio_data = np.mean(audio_data, axis=1)
         
@@ -82,7 +84,7 @@ Accepts the spectrogram of the audio under investigation
         return sorted_distances         
 
     def get_hashing_distance_dict(self, hash1, hash2, component:str, song_name:str):
-        d = calculate_hash_distance(hash1, hash2, "h")
+        d = processing_and_searching.calculate_hash_distance(hash1, hash2, "h")
         
         temp = {
             "song_name": song_name + "//" +  component,
@@ -90,9 +92,6 @@ Accepts the spectrogram of the audio under investigation
         }
         
         return temp
-    
-    def mix_audio_signals(self, path1:str, path2:str):
-        pass
 
 def main():
     mk = Match_Maker()
