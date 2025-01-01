@@ -72,7 +72,31 @@ def generate_spectrogram(audio_data:np.ndarray):
     sg = min_max_normalize(sg)
         
     return sg
+
+def generate_spectrograms(input_folder_path):
+    spectrograms:List[Dict] = []
+    files = os.listdir(input_folder_path)
     
+    for file in files:
+        if file.endswith('.wav'):
+            file_path = os.path.join(input_folder_path, file)
+
+            audio_data, sample_rate = extract_audio_signal(file_path)
+
+            S_db = generate_spectrogram(audio_data)
+
+            spectrograms.append({'file_path':file_path, 'audio_name': file, 'SG': S_db, 'SR':sample_rate})
+
+def generate_dataset_spectrograms(paths:List):
+    """
+    return a list where each entry is a list of dictionaries.\n
+    Each dict contains a wav file paramters as name, path, sampling_rate and spectrogram
+    """
+    full_songs_spectrograms = generate_spectrogram(paths[0])
+    vocals_spectrograms = generate_spectrogram(paths[1])
+    music_spectrograms = generate_spectrogram(paths[2])
+
+    return [full_songs_spectrograms, vocals_spectrograms, music_spectrograms]
 def flatten_and_normalize(features: Dict[str, Union[float, List[float], List[Tuple]]]):
     flattened_features = []
     
@@ -89,17 +113,14 @@ def flatten_and_normalize(features: Dict[str, Union[float, List[float], List[Tup
         
     return flattened_features.tolist()                
 
-def p_hash(features: List[Dict]):
-    features_hashed:List[str] = []
+def p_hash(features: Dict) -> str:
     
-    for dimension in features:
-        dimension = flatten_and_normalize(dimension)
-        dimension = str(dimension).encode()
-        dimension = hashlib.sha256(dimension)
-        dimension = dimension.hexdigest()
-        features_hashed.append(dimension)
+    features = flatten_and_normalize(features)
+    features = str(features).encode()
+    features = hashlib.sha256(features)
+    features = features.hexdigest()
         
-    return features_hashed
+    return features
 
 def perceptual_hash(features: Dict[str, Any]) -> str:
     """
@@ -194,6 +215,10 @@ def calc_energy_envelope_correlation(e1: List, e2: List):
     """ 
     correlation, _ = pearsonr(e1, e2)
     return correlation
+
+
+      
+    return spectrograms
 
 def main():
     a, sr = extract_audio_signal('Data/original_data/songs/FE!N.wav')

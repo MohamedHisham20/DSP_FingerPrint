@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, List
-from Song_FingerPrint import Song_FingerPrint
+from Audio_Fingerprint import Audio_Fingerprint
 import processing_and_searching as ps
 import database
 import librosa
@@ -10,22 +10,31 @@ import soundfile as sf
 
 path = "Data/original_data/songs/FE!N.wav"
 
-class Match_Maker:
+class SingletonMeta(type):
     """
-Accepts the spectrogram of the audio under investigation
+    A metaclass for creating singleton classes.
     """
-    def __init__(self, path1:str, path2:str = None,  mix:bool = False, w1:float = None):        
-        
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+class Match_Maker(SingletonMeta):
+    """
+A singelton class responsible for processing all inputs and performing the search process\n
+Also once instantiated, entire database will be loaded.\n
+A slightly expensive process that will take a minute at most. 
+    """
+    def __init__(self):         
         self.__audio = None
         self.__sg = None
-                
-        self.__hashed_fingerprint = self.__create_hashed_form(path1=path1, path2=path2, mix=mix, w1=w1)
         self.__raw_database, self.__hashed_database = database.create_database()
         
-        self.__matches = self.__search_hashed_database()
-    
     def new_audio_path(self, path1:str, path2:str = None, mix=False, w1=0):
-        self.__create_hashed_form(path1, path2, mix, w1)
+        self.__hashed_fingerprint = self.__create_hashed_form(path1, path2, mix, w1)
         
         self.__matches = self.__search_hashed_database()
         
@@ -50,7 +59,7 @@ Accepts the spectrogram of the audio under investigation
         sg = ps.generate_spectrogram(audio)
         song_name = self.__get_song_name(path1=path1, path2=path2, mix=mix, save_sr=sampling_rate, mix_audio=audio)
         
-        finger_print = Song_FingerPrint(input_sampling_rate=sampling_rate, input_sg=sg,song_name=song_name, mode='in')
+        finger_print = Audio_Fingerprint(input_sampling_rate=sampling_rate, input_sg=sg,song_name=song_name, mode='in')
         
         hashed_features = finger_print.get_hashed_features()
         
@@ -101,11 +110,4 @@ Accepts the spectrogram of the audio under investigation
         
         return temp
 
-def main():
-    mk = Match_Maker()
-    json_ctrl.clear_json_file('matches.json')
-    json_ctrl.clear_json_file('input_hash.json')
-    json_ctrl.write_in_json_file('input_hash.json', mk.get_hash_str())
-    json_ctrl.write_in_json_file('matches.json', mk.get_all_matches()) 
-    
-main()           
+           

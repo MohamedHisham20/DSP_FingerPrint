@@ -7,49 +7,23 @@ import processing_and_searching as ps
 
 real_num = Union[int, float]
 
-class Song_FingerPrint:
-    def __init__(self, song_name:str, sampling_rate:List=[0 for _ in range(3)], input_sampling_rate:real_num=None, input_sg:np.ndarray=None, song_spectrogram:np.ndarray = None, vocals_spectrogram:np.ndarray = None, music_spectrogram:np.ndarray=None, mode:str="db"):
-            """
-            mode can db or in. db is default for creating the database.\n
-            for db mode use parameters sampling_rate, song_spectrogram, vocals_spectrogram, music_spectrogram.\n
-            for single input of audio mix us mode = 'in'.\n
-            for in mode use input_sampling_rate and input_sg
+class Audio_Fingerprint:
+    """
+Create a finger print for an audio file. The finger print contains parameters as:\n
+path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
+    """
+    def __init__(self, audio_name:str, dimension, file_path, sampling_rate:real_num , spectrogram:np.ndarray):
+            self.__audio_name = audio_name
+            self.__path = file_path
+            self.__dimension = dimension
+            self.__sampling_rate = sampling_rate
+            self.__sg = spectrogram
             
-            """
-            self.__song_name = song_name
-            self.__mode = mode
-            
-            # db mode variables
-            self.__song_sampling_rate = sampling_rate[0]
-            self.__vocals_sampling_rate = sampling_rate[1]
-            self.__music_sampling_rate = sampling_rate[2]
+            self.__fingerprint = self.__create_fingerprint()
+   
+    def get_fingerprint(self):
+        return self.__fingerprint
         
-            self.__song_sg = song_spectrogram
-            self.__vocals_sg = vocals_spectrogram
-            self.__music_sg  = music_spectrogram
-
-            self.__features:list[Dict]= [{} for _ in range(3)]
-
-            # in mode variables
-            self.__input_sg = input_sg
-            self.__input_sr = input_sampling_rate
-            self.__input_features:Dict = {} 
-        
-            #populate self.__features, or self__input_features with the raw features
-            self.__extract_features()
-            
-            self.__hashed_features = self.__hash_features()
-        
-    def get_song_name(self):
-        return self.__song_name
-       
-    def get_raw_features(self):
-        if self.__mode=='in': return self.__input_features
-        return self.__features
-    
-    def get_hashed_features(self):
-        return self.__hashed_features
-    
     def __get_peaks_set(self):
         return self.__peaks_set
     
@@ -221,22 +195,6 @@ class Song_FingerPrint:
          
         #inharmonicity
         #energy envelope 
-
-    def __extract_features(self):
-        if self.__mode == 'db':
-            if self.__song_sg is not None:
-                features = self.__extract_general_features(self.__song_sg, self.__song_sampling_rate)
-                self.__features[0] = features
-
-            if self.__vocals_sg is not None:
-                features = self.__extract_general_features(self.__vocals_sg,self.__vocals_sampling_rate)
-                self.__features[1] = features
-
-            if self.__music_sg is not None:
-                features = self.__extract_general_features(self.__music_sg, self.__music_sampling_rate)
-                self.__features[2] = features
-        else:
-            self.__input_features = self.__extract_general_features(self.__input_sg, self.__input_sr)        
     
     def __calculate_spectral_peaks(self, spectrogram):
         """
@@ -264,7 +222,7 @@ class Song_FingerPrint:
 
             # Append (frequency bin, time bin) for each peak
             for freq_idx in peak_indices:
-                peaks_set.add(int(freq_idx), time_idx)
+                peaks_set.add((int(freq_idx), time_idx))
                 peaks.append(int(freq_idx))
         
         return peaks, peaks_set
@@ -302,19 +260,15 @@ class Song_FingerPrint:
         
         return min_peak_height, neighborhood_size
 
-    def __hash_features(self):
-        if self.__mode == 'db':
-            hashed_strings = ps.p_hash(self.get_raw_features())
-            if len(hashed_strings)==3:
-                temp = {
-                    "song_features":hashed_strings[0],
-                    "vocals_features":hashed_strings[1],
-                    "music_features":hashed_strings[2]
-                }
-        else: 
-            hashed_strings = ps.p_hash([self.__input_features])
-            temp = {
-                "hash_str":hashed_strings[0]
-            }   
+    def __create_fingerprint(self):
+        raw_features = self.__extract_general_features(self.__sg)
+        hash_str = ps.p_hash(raw_features)
         
-        return temp     
+        fingerprint = {
+            'file_path': self.__path,
+            'audio_name': self.__audio_name,
+            'dimension' : self.__dimension,
+            'raw_features' : raw_features,
+            'hashed_str': hash_str
+        }
+        return fingerprint
