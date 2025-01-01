@@ -74,10 +74,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if mix and self.mix_song1 and self.mix_song2:
             self.mk.new_search(self.mix_song1, self.mix_song2, True,0.5)
-        else:
-            print("***********************")
-            print(self.selected_song)
-            print("***********************")        
+        else:       
             self.mk.new_search(self.selected_song)  
                    
         matches = self.mk.get_top_matches()
@@ -190,7 +187,7 @@ class SongListElement(QFrame):
         layout.addSpacing(20)
 
         # Create the similarity_index label
-        self.similarity_index_label = QLabel(f"similarity_index: {similarity_index:.1f}%")
+        self.similarity_index_label = QLabel(f"similarity_score: {similarity_index:.3f}")
         self.similarity_index_label.setStyleSheet("color: #1DB954; font-size: 12px; font-weight: bold;")
         layout.addWidget(self.similarity_index_label)
 
