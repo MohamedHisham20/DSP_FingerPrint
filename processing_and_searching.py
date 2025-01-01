@@ -58,6 +58,9 @@ def mix_audio(path1:str, path2:str, w1:float, w2:float):
     return mix, common_sr
     
 def get_audio_and_sampling_rate(path1, path2 = None, mix:bool=False, w1 = 0):
+    """return peak normalized audio signal of the single input or mix\n
+    sampling rate also is returned
+    """
     if mix:
         return extract_audio_signal(path1)
     return mix_audio(path1, path2, w1, 1-w1)    
@@ -73,38 +76,46 @@ def generate_spectrogram(audio_data:np.ndarray):
         
     return sg
 
-def generate_spectrograms(input_folder_path):
+def __generate_spectrograms(input_folder_path):
     spectrograms:List[Dict] = []
     files = os.listdir(input_folder_path)
     
     for file in files:
         if file.endswith('.wav'):
             file_path = os.path.join(input_folder_path, file)
-
+            file_path = os.path.normpath(file_path)
             audio_data, sample_rate = extract_audio_signal(file_path)
 
             S_db = generate_spectrogram(audio_data)
-
-            spectrograms.append({'file_path':file_path, 'audio_name': file, 'SG': S_db, 'SR':sample_rate})
+            audio_name, ext = os.path.splitext(file)
+            
+            spectrograms.append({'file_path':file_path, 'audio_name': audio_name, 'SG': S_db, 'SR':sample_rate})
+            
+    return spectrograms        
 
 def generate_dataset_spectrograms(paths:List):
     """
     return a list where each entry is a list of dictionaries.\n
     Each dict contains a wav file paramters as name, path, sampling_rate and spectrogram
     """
-    full_songs_spectrograms = generate_spectrogram(paths[0])
-    vocals_spectrograms = generate_spectrogram(paths[1])
-    music_spectrograms = generate_spectrogram(paths[2])
+    full_songs_spectrograms = __generate_spectrograms(paths[0])
+    vocals_spectrograms = __generate_spectrograms(paths[1])
+    music_spectrograms = __generate_spectrograms(paths[2])
 
     return [full_songs_spectrograms, vocals_spectrograms, music_spectrograms]
-def flatten_and_normalize(features: Dict[str, Union[float, List[float], List[Tuple]]]):
+
+
+def flatten_and_normalize(features: Dict):
     flattened_features = []
     
     for key, val in sorted(features.items()):
         if isinstance(val, float) or isinstance(val, int):
             flattened_features.append(val)
         elif isinstance(val, list):
-            flattened_features.extend(val)
+            if isinstance(val[0], list):
+                for item in val:
+                    flattened_features.extend(item)
+            else: flattened_features.extend(val)
             
     flattened_features = np.array(flattened_features)
     
@@ -199,7 +210,7 @@ def calculate_hash_distance(hash1: str, hash2: str, distance_metric: str = 'h') 
         raise ValueError(
             "Invalid distance metric. Supported metrics: 'cosine', 'euclidean', 'cityblock', 'jensenshannon'.")
 
-def calc_shared_spectral_peaks_num(peaks1: Set, peaks2: Set):
+def calc_shared_spectral_peaks_ratio(peaks1: Set, peaks2: Set):
     """
     return a similarity ratio incorporating how similar are the spectral peaks
     """
@@ -217,11 +228,6 @@ def calc_energy_envelope_correlation(e1: List, e2: List):
     return correlation
 
 
-      
-    return spectrograms
-
 def main():
     a, sr = extract_audio_signal('Data/original_data/songs/FE!N.wav')
-    generate_spectrogram(a)
 
-main()

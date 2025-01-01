@@ -14,42 +14,43 @@ database_json_file = 'json_files/db.json'
 real_number = Union[int, float]
 
 #number of songs in database
-number_of_songs = 11
+number_of_songs = 17
+
+full_songs_path = 'Data/original_data/songs'
+vocals_files_path = 'Data/original_data/vocals'
+music_files_path = 'Data/original_data/music'
+    
+paths = [full_songs_path, vocals_files_path, music_files_path]
+dim = ['full_song', 'vocals', 'music']
 
 def create_database():
     """
 Database is a list of fingerprints.    
     """
-    global number_of_songs
-    database = []
+    global number_of_songs, paths, dim
     
-    full_songs_path = 'Data/original_data/songs'
-    vocals_files_path = 'Data/original_data/vocals'
-    music_files_path = 'Data/original_data/music'
-    
-    paths = [full_songs_path, vocals_files_path, music_files_path]
-    
-    spectrograms = ps.generate_dataset_spectrograms(paths)
+    spectrograms: List[List[Dict]] = ps.generate_dataset_spectrograms(paths)
+    full_database = []
     
     i = 0
-    dim = ['full_song', 'vocals', 'music']
-    
     for dimension in spectrograms:    
         for sg in dimension:
             file_path = sg['file_path']
             name = sg['audio_name']
-            sg = sg['SG']
-            sr = sg['sr']
+            spectrogram = sg['SG']
+            sr = sg['SR']
             
-            fp = Audio_Fingerprint(name,dim[i],file_path,sr,sg)
-            database.append(fp.get_fingerprint())
+            fp = Audio_Fingerprint(audio_name=name, dimension=dim[i], file_path=file_path, sampling_rate=sr, spectrogram=spectrogram)
+            full_database.append(fp.get_fingerprint())
         
         i+=1    
             
     print("Database Created successfully")
-    return database    
+    return full_database    
 
 def main():
     json_ctrl.clear_json_file(database_json_file)
     db = create_database()
-    json_ctrl.write_in_json_file(database_json_file, db)    
+    json_ctrl.write_in_json_file(database_json_file, db[0])
+
+            

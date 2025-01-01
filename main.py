@@ -15,6 +15,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mk = Match_Maker()
         # Load the UI file
         self.ui= uic.loadUi('main_window.ui', self)
+        self.curr_audio_file = None
         self.selected_song = None
         self.song_list = ScrollableSongList()
         self.ui.rank_wgt.layout().addWidget(self.song_list)
@@ -43,7 +44,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.play_song_btn_2.clicked.connect(lambda: self.play_stop_song(2))
         self.ui.choose_file_3.clicked.connect(lambda: self.choose_audio_file(3))
         self.ui.play_song_btn_3.clicked.connect(lambda: self.play_stop_song(3))
-
+        self.ui.Mix_btn.clicked.connect(lambda: self.get_top_matches(True))
+        
     def choose_audio_file(self, player_id):
         file_dialog = QtWidgets.QFileDialog()
         file_dialog.setNameFilter("Audio files (*.wav *.mp3)")
@@ -51,29 +53,44 @@ class MainWindow(QtWidgets.QMainWindow):
         if file_path:
             if player_id == 1:
                 self.selected_song = file_path
-                self.ui.song_name.setText(file_path.split("/")[-1])
-                self.ui.play_song_btn.show()
-                self.mk.new_audio_path(self.selected_song)
-                
-            
+                if (self.curr_audio_file!=self.selected_song) or (self.curr_audio_file==None):
+                    self.curr_audio_file = self.selected_song
+                    self.ui.song_name.setText(file_path.split("/")[-1])
+                    self.ui.play_song_btn.show()
             elif player_id == 2:
                 self.mix_song1 = file_path
                 self.ui.song_name_2.setText(file_path.split("/")[-1])
                 self.ui.play_song_btn_2.show()
-                
-            
             else:
                 self.mix_song2 = file_path
                 self.ui.song_name_3.setText(file_path.split("/")[-1])
                 self.ui.play_song_btn_3.show()
             
-            if self.mix_song1 and self.mix_song2:
-                w1= None
-                self.mk.new_audio_path(path1=self.mix_song1, path2=self.mix_song2, mix=True, w1=w1)
+        self.get_top_matches()
     
-    def display_mathches(self):
-        matcehs = self.mk.get_top_matches()
-    
+    def get_top_matches(self, mix=False):
+        """
+        return the top matches
+        """
+        if mix and self.mix_song1 and self.mix_song2:
+            self.mk.new_search(self.mix_song1, self.mix_song2, True,0.5)
+        else:
+            print("***********************")
+            print(self.selected_song)
+            print("***********************")        
+            self.mk.new_search(self.selected_song)  
+                   
+        matches = self.mk.get_top_matches()
+        self.add_matches(matches)
+        
+    def add_matches(self, matches):
+        for match in matches:
+            name = match['audio_name']
+            path = match['file_path']
+            score = match['score']      
+            
+            self.song_list.add_song(song_name=name, wav_file=path, similarity_index=score)
+        
     def play_stop_song(self, player_id):
         if player_id == 1:
             song = self.selected_song
@@ -99,8 +116,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             print("No song selected")
             
-    def get_top_matches(self):
-        pass
 
 class ScrollableSongList(QScrollArea):
     def __init__(self, parent=None):

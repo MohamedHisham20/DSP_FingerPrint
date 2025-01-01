@@ -22,7 +22,7 @@ class SingletonMeta(type):
             cls._instances[cls] = instance
         return cls._instances[cls]
 
-class Match_Maker(SingletonMeta):
+class Match_Maker():
     """
 A singelton class responsible for processing all inputs and performing the search process\n
 Also once instantiated, entire database will be loaded.\n
@@ -31,83 +31,101 @@ A slightly expensive process that will take a minute at most.
     def __init__(self):         
         self.__audio = None
         self.__sg = None
-        self.__raw_database, self.__hashed_database = database.create_database()
+        self.__full_db = database.create_database()
         
-    def new_audio_path(self, path1:str, path2:str = None, mix=False, w1=0):
-        self.__hashed_fingerprint = self.__create_hashed_form(path1, path2, mix, w1)
+    def new_search(self, path1:str, path2:str = None, mix=False, w1=0.5):
+        self.__path1 = path1
+        self.__path2 = path2
         
-        self.__matches = self.__search_hashed_database()
+        self.__fingerprint = self.__create_fingerprint(path1, path2, mix, w1)
         
-    def get_raw_database(self):
-        return self.__raw_database
-    
-    def get_hashed_database(self):
-        return self.__hashed_database    
-    
+        self.__matches = self.__search_database()
+        
     def get_all_matches(self):
         return self.__matches
     
     def get_top_matches(self, display_n=5):        
         return self.__matches[:display_n]
-            
-    def get_hash_str(self)->str:
-        return self.__hashed_fingerprint['hash_str']
                 
-    def __create_hashed_form(self, path1:str, path2:str=None, mix:bool = False, w1:float = None):        
+    def __create_fingerprint(self, path1:str, path2:str=None, mix:bool = False, w1:float = None):        
+        path = path1
+        audio_name = os.path.basename(path)
+        audio_name, ext = os.path.splitext(audio_name)
         
-        audio, sampling_rate = ps.get_audio_and_sampling_rate(path1, path2, mix, w1)
+        if not mix:
+            audio, sampling_rate = ps.extract_audio_signal(path1)
+        else: 
+            audio, sampling_rate = ps.mix_audio(path1, path2, w1, 1-w1)
+            audio_name, path = self.__save_mix(path1, path2, audio, sampling_rate)
+        
         sg = ps.generate_spectrogram(audio)
-        song_name = self.__get_song_name(path1=path1, path2=path2, mix=mix, save_sr=sampling_rate, mix_audio=audio)
-        
-        finger_print = Audio_Fingerprint(input_sampling_rate=sampling_rate, input_sg=sg,song_name=song_name, mode='in')
-        
-        hashed_features = finger_print.get_hashed_features()
-        
-        hashed_fingerprint = {'song_name':song_name}
-        hashed_fingerprint.update(hashed_features)
-        
-        return hashed_fingerprint
-
-
-    def __get_song_name(self, path1, path2 = None, mix = False, save_sr=None, mix_audio = None):
-        """
-        get song name or compose name in case of mix.\n
-        the mixed audio will be saved in a .wav file
-        """
-        name1:str = os.path.basename(path1)
-        song_name = name1
-        
-        if mix:
-            name2:str = os.path.basename(path2)
-            song_name = name1+'and'+name2+'mix.wav'
-            save_path = 'saved_mix/'+song_name
-            sf.write(save_path, mix_audio, save_sr)
-            print(f"mix of {name1} and {name2} has been saved")
             
-        return song_name    
-
-    def __search_hashed_database(self):
-        distances:List[Dict[str, float]] = []        
-
-        for fingerprint in self.__hashed_database:
-            song_name = fingerprint['song_name']
-            input_hash = self.get_hash_str()
-            for key, val in fingerprint['hashed_features'].items():
-                component = key[:-9]
-                d = self.__get_hashing_distance_dict(input_hash, val, component,song_name)
-                distances.append(d)
-                
-        sorted_distances = sorted(distances, key=lambda x: x["distance"])
-        return sorted_distances         
-
-    def __get_hashing_distance_dict(self, hash1, hash2, component:str, song_name:str):
-        d = ps.calculate_hash_distance(hash1, hash2, "h")
+        finger_print = Audio_Fingerprint(audio_name=audio_name, dimension='none', file_path=path, sampling_rate=sampling_rate, spectrogram=sg)
         
-        temp = {
-            "song_name": song_name + "//" +  component,
-            "distance": d
+        return finger_print
+        
+    def __save_mix(self, path1, path2, mix_audio, sr):
+        """
+        save mix audio in a .wav file.\n
+        return mix_name and mix_file_path
+        """
+        name1 = os.path.basename(path1)
+        name1, ext = os.path.splitext(name1)
+        
+        name2 = os.path.basename(path2)
+        name2, ext = os.path.splitext(name2)
+        
+        audio_name = name1+'and'+name2+'mix'
+        save_path = os.path.join('saved_mix/'+audio_name+'.wav') 
+            
+        sf.write(save_path, mix_audio, sr) 
+            
+        return audio_name, save_path    
+
+    def __search_database(self):
+        indices = []
+        
+        for fp in self.__full_db:
+            index = self.__calc_similarity_index(fp)
+            indices.append(index)
+                
+        indices = sorted(indices, key=lambda x: x["score"], reverse=True)
+        
+        return indices         
+
+
+    def __calc_similarity_index(self, db_fingerprint):
+        name = db_fingerprint['audio_name']
+        path = db_fingerprint['file_path']
+        dim = db_fingerprint['dimension']
+        hash_str = db_fingerprint['hash_str']
+        raw_features = db_fingerprint['raw_features']
+        peaks = raw_features['spectral_peaks']
+        e = raw_features['energy_envelope']
+        
+        peaks = {tuple(inner_list) for inner_list in peaks}
+        
+        hash_dist = ps.calculate_hash_distance(hash_str, self.__fingerprint.get_hash_str())
+        score = 1 - float(hash_dist)
+        
+        score += ps.calc_shared_spectral_peaks_ratio(peaks, self.__fingerprint.get_spectral_peaks_set())
+        
+        #score += ps.calc_energy_envelope_correlation(e, self.__fingerprint.get_energy_envelope())
+        
+        return {
+            'score': score, 
+            'audio_name': name, 
+            'file_path':path,
+            'dimension':dim
         }
         
-        return temp
 
+def main():
+    file_path = 'Data/original_data/songs/Rolling_in_the_deep(Original).mp3.wav'
+    
+    mk = Match_Maker()
+    mk.new_search(path1=file_path)
+    
+    print(mk.get_top_matches(1)) 
+    
            

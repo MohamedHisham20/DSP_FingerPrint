@@ -4,6 +4,7 @@ from typing import Dict, List, Union
 from scipy.signal import find_peaks
 from typing import Union, Tuple
 import processing_and_searching as ps
+import json_ctrl
 
 real_num = Union[int, float]
 
@@ -23,11 +24,29 @@ path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
    
     def get_fingerprint(self):
         return self.__fingerprint
+    
+    def get_raw_features(self):
+        return self.__fingerprint['raw_features']
+    
+    def get_file_path(self):
+        return self.__fingerprint['file_path']
+    
+    def get_audio_name(self):
+        return self.__fingerprint['audio_name']
+    
+    def get_dimension(self):
+        return self.__fingerprint['dimension']
+    
+    def get_hash_str(self):
+        return self.__fingerprint['hash_str']
         
-    def __get_peaks_set(self):
+    def get_spectral_peaks(self):
+        return self.__spectral_peaks
+    
+    def get_spectral_peaks_set(self):
         return self.__peaks_set
     
-    def __get_energy_envelope(self):
+    def get_energy_envelope(self):
         return self.__energy_envelope          
       
     def __extract_general_features(self, spectrogram:np.ndarray, sampling_rate):
@@ -66,14 +85,13 @@ path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
         
         # Min-Max Normalized Energy Distribution, List
         energy = np.sum(spectrogram, axis=0)
-        energy = energy.tolist()
         energy = ps.min_max_normalize(energy)
+        energy = energy.tolist()
         self.__energy_envelope = features['energy_envelope'] = energy
         
         #Shazam Spectral Peaks
-        spectral_peaks, spectral_peaks_set = self.__calculate_spectral_peaks(spectrogram)
-        self.__peaks_set = spectral_peaks_set
-        features['spectral_peaks'] = spectral_peaks
+        self.__spectral_peaks, self.__peaks_set = self.__calculate_spectral_peaks(spectrogram)
+        features['spectral_peaks'] = self.__spectral_peaks
 
         return features
     
@@ -210,7 +228,7 @@ path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
         """
         min_peak_height, neighborhood_size = self.__obtain_min_peaks_and_neighborhood_size(spectrogram)
         
-        peaks = []
+        peaks: List[List] = []
         peaks_set = set()
         # Iterate over time frames (columns in the spectrogram)
         for time_idx in range(spectrogram.shape[1]):
@@ -222,8 +240,8 @@ path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
 
             # Append (frequency bin, time bin) for each peak
             for freq_idx in peak_indices:
+                peaks.append([int(freq_idx), time_idx])
                 peaks_set.add((int(freq_idx), time_idx))
-                peaks.append(int(freq_idx))
         
         return peaks, peaks_set
     
@@ -261,7 +279,7 @@ path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
         return min_peak_height, neighborhood_size
 
     def __create_fingerprint(self):
-        raw_features = self.__extract_general_features(self.__sg)
+        raw_features = self.__extract_general_features(self.__sg, self.__sampling_rate)
         hash_str = ps.p_hash(raw_features)
         
         fingerprint = {
@@ -269,6 +287,8 @@ path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
             'audio_name': self.__audio_name,
             'dimension' : self.__dimension,
             'raw_features' : raw_features,
-            'hashed_str': hash_str
+            'hash_str': hash_str
         }
         return fingerprint
+    
+               
