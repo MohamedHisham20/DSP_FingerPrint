@@ -39,7 +39,7 @@ A slightly expensive process that will take a minute at most.
     def get_all_matches(self):
         return self.__matches
     
-    def get_top_matches(self, display_n=5):        
+    def get_top_matches(self, display_n=10):        
         return self.__matches[:display_n]
                 
     def __create_fingerprint(self, path1:str, path2:str=None, mix:bool = False, w1:float = None):        
@@ -88,6 +88,8 @@ A slightly expensive process that will take a minute at most.
         score += ps.calc_shared_spectral_peaks_ratio(peaks, self.__fingerprint.get_spectral_peaks_set())
         
         score += ps.calc_energy_envelope_correlation(e, self.__fingerprint.get_energy_envelope())
+        
+        score = (score / 3) * 100
         
         return {
             'score': score, 

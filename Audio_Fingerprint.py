@@ -65,13 +65,13 @@ path, audio_name, dimension(song, vocals, music), raw_features, hash_str.
         # features['spectral_rolloff'] = float(spectral_rolloff.mean())
         
         # # Mean Centroid, Scalar, works on audio or spectrogram
-        # spectral_centroid = librosa.feature.spectral_centroid(S=power_spec, sr=sampling_rate).mean()
-        # spectral_centroid = float(spectral_centroid)
-        # features['spectral_centroid'] = spectral_centroid
+        spectral_centroid = librosa.feature.spectral_centroid(S=power_spec, sr=sampling_rate).mean()
+        spectral_centroid = float(spectral_centroid)
+        features['spectral_centroid'] = spectral_centroid
 
         # # Spectral Contrast, List, works on audio or spectrogram
-        # spectral_contrast = librosa.feature.spectral_contrast(S=spectrogram, sr=sampling_rate)
-        # features['spectral_contrast'] = spectral_contrast.mean(axis=1).tolist()
+        spectral_contrast = librosa.feature.spectral_contrast(S=spectrogram, sr=sampling_rate)
+        features['spectral_contrast'] = spectral_contrast.mean(axis=1).tolist()
         
         # Extract Zero Crossing Rate, float, works on the audio singal
         # zero_crossing_rate = librosa.feature.zero_crossing_rate(y=librosa.istft(spectrogram))

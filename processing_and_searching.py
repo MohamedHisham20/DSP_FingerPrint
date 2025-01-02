@@ -6,6 +6,7 @@ import os
 import librosa
 from scipy.stats import pearsonr
 import soundfile as sf
+from scipy.interpolate import interp1d
 
 def peak_normalize(data:np.ndarray):
     max_val = np.max(data)
@@ -259,10 +260,37 @@ def calc_shared_spectral_peaks_ratio(peaks1: Set, peaks2: Set):
     similarity_ratio = len(shared_peaks) / len(unique_peaks)
     return similarity_ratio
 
-def calc_energy_envelope_correlation(e1: List, e2: List):
+def __sinc_interpolate(x_vals, y_vals, new_x_vals):
+    if len(x_vals) != len(y_vals):
+        raise ValueError("x_vals are not equal to y_vals")
+    
+    sinc_matrix = np.tile(new_x_vals, (len(x_vals), 1))
+    sinc_matrix = np.sinc(sinc_matrix)
+    
+    interpolated = np.dot(y_vals, sinc_matrix)
+    return interpolated.tolist()
+    
+
+def calc_energy_envelope_correlation(e1: List, e2: List, interpolation='sinc'):
     """
     return a metric that indicates how similar the energy distribution is
     """ 
+    if len(e1) < len(e2):
+        old = np.linspace(0, 1, len(e1))
+        new = np.linspace(0, 1, len(e2))
+        if interpolation=='sinc': e1 = __sinc_interpolate(old, e1, new)
+        else:
+            f = interp1d(old, e1, interpolation)
+            e1 = f(new)
+    
+    elif len(e2) < len(e1):
+        old = np.linspace(0, 1, len(e2))
+        new = np.linspace(0, 1, len(e1))
+        if interpolation=='sinc': e2 = __sinc_interpolate(old, e2, new)
+        else:
+            f = interp1d(old, e2, interpolation)
+            e2 = f(new)
+                     
     correlation, _ = pearsonr(e1, e2)
     return correlation
 
