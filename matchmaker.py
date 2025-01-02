@@ -29,16 +29,11 @@ Also once instantiated, entire database will be loaded.\n
 A slightly expensive process that will take a minute at most. 
     """
     def __init__(self):         
-        self.__audio = None
-        self.__sg = None
         self.__full_db = database.create_database()
         
-    def new_search(self, path1:str, path2:str = None, mix=False, w1=0.5):
-        self.__path1 = path1
-        self.__path2 = path2
+    def new_search(self, path1:str, path2:str = None, mix=False, w1=0.5):        
         
         self.__fingerprint = self.__create_fingerprint(path1, path2, mix, w1)
-        
         self.__matches = self.__search_database()
         
     def get_all_matches(self):
@@ -48,39 +43,21 @@ A slightly expensive process that will take a minute at most.
         return self.__matches[:display_n]
                 
     def __create_fingerprint(self, path1:str, path2:str=None, mix:bool = False, w1:float = None):        
-        path = path1
-        audio_name = os.path.basename(path)
-        audio_name, ext = os.path.splitext(audio_name)
-        
-        if not mix:
-            audio, sampling_rate = ps.extract_audio_signal(path1)
-        else: 
-            audio, sampling_rate = ps.mix_audio(path1, path2, w1, 1-w1)
-            audio_name, path = self.__save_mix(path1, path2, audio, sampling_rate)
+        if mix:
+            audio, sr, audio_name, path = ps.mix_audio(path1, path2, w1, 1-w1)
+        else:
+            audio, sr = ps.extract_audio_signal(path1)
+            audio_name = os.path.basename(path1)
+            audio_name, ext = os.path.splitext(audio_name)
+            path = path1
         
         sg = ps.generate_spectrogram(audio)
             
-        finger_print = Audio_Fingerprint(audio_name=audio_name, dimension='none', file_path=path, sampling_rate=sampling_rate, spectrogram=sg)
+        finger_print = Audio_Fingerprint(audio_name=audio_name, dimension='none', file_path=path, sampling_rate=sr, spectrogram=sg)
         
         return finger_print
         
-    def __save_mix(self, path1, path2, mix_audio, sr):
-        """
-        save mix audio in a .wav file.\n
-        return mix_name and mix_file_path
-        """
-        name1 = os.path.basename(path1)
-        name1, ext = os.path.splitext(name1)
-        
-        name2 = os.path.basename(path2)
-        name2, ext = os.path.splitext(name2)
-        
-        audio_name = name1+'and'+name2+'mix'
-        save_path = os.path.join('saved_mix/'+audio_name+'.wav') 
-            
-        sf.write(save_path, mix_audio, sr) 
-            
-        return audio_name, save_path    
+    
 
     def __search_database(self):
         indices = []
@@ -110,7 +87,7 @@ A slightly expensive process that will take a minute at most.
         
         score += ps.calc_shared_spectral_peaks_ratio(peaks, self.__fingerprint.get_spectral_peaks_set())
         
-        #score += ps.calc_energy_envelope_correlation(e, self.__fingerprint.get_energy_envelope())
+        score += ps.calc_energy_envelope_correlation(e, self.__fingerprint.get_energy_envelope())
         
         return {
             'score': score, 

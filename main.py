@@ -57,6 +57,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.curr_audio_file = self.selected_song
                     self.ui.song_name.setText(file_path.split("/")[-1])
                     self.ui.play_song_btn.show()
+                    self.get_top_matches()
             elif player_id == 2:
                 self.mix_song1 = file_path
                 self.ui.song_name_2.setText(file_path.split("/")[-1])
@@ -66,8 +67,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.song_name_3.setText(file_path.split("/")[-1])
                 self.ui.play_song_btn_3.show()
             
-        self.get_top_matches()
-    
+        
     def get_top_matches(self, mix=False):
         """
         return the top matches
@@ -187,7 +187,7 @@ class SongListElement(QFrame):
         layout.addSpacing(20)
 
         # Create the similarity_index label
-        self.similarity_index_label = QLabel(f"similarity_score: {similarity_index:.3f}")
+        self.similarity_index_label = QLabel(f"similarity_score: {similarity_index:.3f}%")
         self.similarity_index_label.setStyleSheet("color: #1DB954; font-size: 12px; font-weight: bold;")
         layout.addWidget(self.similarity_index_label)
 

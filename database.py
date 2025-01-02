@@ -42,7 +42,8 @@ Database is a list of fingerprints.
             
             fp = Audio_Fingerprint(audio_name=name, dimension=dim[i], file_path=file_path, sampling_rate=sr, spectrogram=spectrogram)
             full_database.append(fp.get_fingerprint())
-        
+            print(sr)
+            
         i+=1    
             
     print("Database Created successfully")

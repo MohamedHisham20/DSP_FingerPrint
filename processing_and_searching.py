@@ -5,6 +5,7 @@ from scipy.spatial.distance import cosine, euclidean, cityblock, jensenshannon, 
 import os
 import librosa
 from scipy.stats import pearsonr
+import soundfile as sf
 
 def peak_normalize(data:np.ndarray):
     max_val = np.max(data)
@@ -18,16 +19,21 @@ def min_max_normalize(data:np.ndarray):
     data = (data - min_val) / (max_val - min_val)
     return data
 
-def extract_audio_signal(file_path:str):
+def trim_and_perform_monoticity(audio_data: np.ndarray, sample_rate):
+    if len(audio_data.shape) > 1: audio_data = np.mean(audio_data, axis=1)
+    audio_data = audio_data[:sample_rate * 30]
+    
+    return audio_data
+
+def extract_audio_signal(file_path:str, sr = 48000):
     """
     return the normalized audio signal with its native sampling rate.\n
     Peak Normalization is applied if required.
     """
     file_path = os.path.normpath(file_path)
-    audio_data, sample_rate = librosa.load(file_path, sr=None)
+    audio_data, sample_rate = librosa.load(file_path, sr=sr)
     
-    if len(audio_data.shape) > 1: audio_data = np.mean(audio_data, axis=1)
-    audio_data = audio_data[:sample_rate * 30]
+    audio_data = trim_and_perform_monoticity(audio_data, sample_rate)
     
     audio_data = peak_normalize(audio_data)
     
@@ -35,36 +41,46 @@ def extract_audio_signal(file_path:str):
 
 def mix_audio(path1:str, path2:str, w1:float, w2:float):
     """
-    Return the normalizaed mixed signal with the common sampling rate
+    Return the normalizaed mixed signal, the common sampling rate, name and path\n
     w is the weight assigned to audio1. audio2 will have 1-w.\n
     0 < w < 1
     """
     path1 = os.path.normpath(path1)
     path2 = os.path.normpath(path2)
     
-    audio1, sr1 = extract_audio_signal(path1, False)
-    audio2, sr2 = extract_audio_signal(path2, False)
-   
-    if sr1 > sr2: 
-        audio2 = librosa.resample(y=audio2, orig_sr=sr2, target_sr=sr1)
-    elif sr2 > sr1:
-        audio1 = librosa.resample(y=audio1, orig_sr=sr1, target_sr=sr2)
+    audio1, sr = extract_audio_signal(path1)
+    audio2, sr = extract_audio_signal(path2)
+            
     
-    common_sr = max(sr1, sr2)       
+    audio1 = trim_and_perform_monoticity(audio1, sr)
+    audio2 = trim_and_perform_monoticity(audio2, sr)       
     
-    mix = (w1*audio1) + (w2*audio2)
-    mix = peak_normalize(mix)
+    mix_audio = (w1*audio1) + (w2*audio2)
     
-    return mix, common_sr
+    mix_audio = peak_normalize(mix_audio)
     
-def get_audio_and_sampling_rate(path1, path2 = None, mix:bool=False, w1 = 0):
-    """return peak normalized audio signal of the single input or mix\n
-    sampling rate also is returned
+    name, path =  save_mix(path1, path2, mix_audio, sr)
+    
+    return mix_audio, sr, name, path 
+ 
+def save_mix(path1, path2, mix_audio, sr):
     """
-    if mix:
-        return extract_audio_signal(path1)
-    return mix_audio(path1, path2, w1, 1-w1)    
-
+    save mix audio in a .wav file.\n
+    return mix_name and mix_file_path
+    """
+    name1 = os.path.basename(path1)
+    name1, ext = os.path.splitext(name1)
+        
+    name2 = os.path.basename(path2)
+    name2, ext = os.path.splitext(name2)
+        
+    audio_name = name1+'and'+name2+'mix'
+    save_path = os.path.join('saved_mix/'+audio_name+'.wav') 
+            
+    sf.write(save_path, mix_audio, sr) 
+            
+    return audio_name, save_path 
+    
 def generate_spectrogram(audio_data:np.ndarray):
     """
     return normalized spectrogram in decibel scale.\n
@@ -77,6 +93,11 @@ def generate_spectrogram(audio_data:np.ndarray):
     return sg
 
 def __generate_spectrograms(input_folder_path):
+    sampling_rates = []
+    audios = []
+    paths = []
+    names = []
+    
     spectrograms:List[Dict] = []
     files = os.listdir(input_folder_path)
     
@@ -84,14 +105,32 @@ def __generate_spectrograms(input_folder_path):
         if file.endswith('.wav'):
             file_path = os.path.join(input_folder_path, file)
             file_path = os.path.normpath(file_path)
-            audio_data, sample_rate = extract_audio_signal(file_path)
-
-            S_db = generate_spectrogram(audio_data)
             audio_name, ext = os.path.splitext(file)
+            audio_data, sample_rate = extract_audio_signal(file_path)
             
-            spectrograms.append({'file_path':file_path, 'audio_name': audio_name, 'SG': S_db, 'SR':sample_rate})
+            audios.append(audio_data)
+            sampling_rates.append(sample_rate)
+            names.append(audio_name)
+            paths.append(file_path)
             
+    audios, max_sr = resample_audios_with_max_sr(audios, sampling_rates)
+    
+    for audio, path, name in zip(audios, paths, names):
+        S_db = generate_spectrogram(audio)
+        spectrograms.append({'file_path':path, 'audio_name': name, 'SG': S_db, 'SR':max_sr})
+    
     return spectrograms        
+
+
+def resample_audios_with_max_sr(audios, og_sampling_rates):
+    max_sr = max(og_sampling_rates)
+    new_audios = []
+    
+    for audio, og_sr in zip(audios, og_sampling_rates):
+        audio = librosa.resample(y=audio, orig_sr=og_sr, target_sr=max_sr)
+        new_audios.append(audio)
+        
+    return new_audios, max_sr    
 
 def generate_dataset_spectrograms(paths:List):
     """
