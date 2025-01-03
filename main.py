@@ -32,6 +32,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.player = QMediaPlayer()
         self.player_mix1 = QMediaPlayer()
         self.player_mix2 = QMediaPlayer()
+        self.mixer_player = QMediaPlayer()
         self.mix_song1 = None
         self.mix_song2 = None
         self.w1 = 0.5
@@ -75,10 +76,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return the top matches
         """
         if self.song_list.songs:
-            self.song_list.clear_all_songs()
+            self.song_list.clear_all_songs()    
             
         if mix and self.mix_song1 and self.mix_song2:
-            self.mk.new_search(self.mix_song1, self.mix_song2, True,0.5)
+            self.mk.new_search(self.mix_song1, self.mix_song2, True,self.w1)
         else:       
             self.mk.new_search(self.selected_song)  
                    

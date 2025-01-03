@@ -28,7 +28,8 @@ A singelton class responsible for processing all inputs and performing the searc
 Also once instantiated, entire database will be loaded.\n
 A slightly expensive process that will take a minute at most. 
     """
-    def __init__(self):         
+    def __init__(self):
+        self.mix_path = ""         
         self.__full_db = database.create_database()
         
     def new_search(self, path1:str, path2:str = None, mix=False, w1=0.5):        
@@ -45,6 +46,7 @@ A slightly expensive process that will take a minute at most.
     def __create_fingerprint(self, path1:str, path2:str=None, mix:bool = False, w1:float = None):        
         if mix:
             audio, sr, audio_name, path = ps.mix_audio(path1, path2, w1, 1-w1)
+            self.mix_path = path
         else:
             audio, sr = ps.extract_audio_signal(path1)
             audio_name = os.path.basename(path1)

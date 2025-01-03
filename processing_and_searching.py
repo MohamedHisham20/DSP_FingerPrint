@@ -22,7 +22,7 @@ def min_max_normalize(data:np.ndarray):
 
 def trim_and_perform_monoticity(audio_data: np.ndarray, sample_rate):
     if len(audio_data.shape) > 1: audio_data = np.mean(audio_data, axis=1)
-    audio_data = audio_data[:sample_rate * 30]
+    audio_data = audio_data[:sample_rate * 18]
     
     return audio_data
 
