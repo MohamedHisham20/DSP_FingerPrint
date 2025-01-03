@@ -19,12 +19,10 @@ class SongListElement(QFrame):
 
         """)
         self.setFixedHeight(60)
-
         # Store song information
         self.song_name = song_name
         self.wav_file = wav_file
         self.similarity = similarity
-
         # Create layout
         layout = QHBoxLayout(self)
 
@@ -73,45 +71,6 @@ class SongListElement(QFrame):
 
 
 class ScrollableSongList(QScrollArea):
-    # def has_selected_song(self):
-    #     """Return True if a song is currently selected, False otherwise."""
-    #     return self.clicked_song is not None
-    # clicked_song = None  # Class variable to store the selected song
-    
-    # def mousePressEvent(self, event):
-    #     # Reset background color of previously clicked song
-    #     if self.clicked_song:
-    #         self.clicked_song.setStyleSheet("""
-    #             QFrame {
-    #                 border: 1px solid #3E3E3E;
-    #                 border-radius: 10px;
-    #             }
-    #         """)
-    #         self.clicked_song = None
-            
-    #     # Get clicked widget
-    #     child = self.childAt(event.pos())
-    #     while child and not isinstance(child, SongListElement):
-    #         child = child.parent()
-            
-    #     if child:
-    #         # Set new clicked song and update style
-    #         self.clicked_song = child
-    #         background_color = "gray" 
-    #         self.clicked_song.setStyleSheet("""
-    #             QFrame {
-    #                 border: 1px solid #3E3E3E;
-    #                 border-radius: 10px;
-    #                 background-color: """ + background_color + """;
-    #             }
-    #         """)
-    
-    # def get_selected_song(self):
-    #     if self.clicked_song:
-    #         index = self.songs.index(self.clicked_song)
-    #         return self.clicked_song.song_name, index
-    #     return None, None
-
     def __init__(self, parent=None):
         super().__init__(parent)
         set_stylesheet(self)
@@ -119,32 +78,32 @@ class ScrollableSongList(QScrollArea):
         # Create container widget and layout
         self.container = QWidget()
         self.layout = QVBoxLayout(self.container)
-
-        # # Add header
-        # header_frame = QFrame()
-        # header_layout = QHBoxLayout(header_frame)
         
-        # rank_header = QLabel("Rank")
-        # song_header = QLabel("Name")
-        # similarity_header = QLabel("Similarity")
-        
-        # header_style = "font-weight: bold; font-size: 14px; color: #1DB954;"
-        # rank_header.setStyleSheet(header_style)
-        # song_header.setStyleSheet(header_style)
-        # similarity_header.setStyleSheet(header_style)
-        
-        # header_layout.addWidget(rank_header)
-        # header_layout.addWidget(song_header)
-        # # header_layout.addStretch()
-        # header_layout.addWidget(similarity_header)
-        # # header_layout.addSpacing(50)  # Space for play button
-        
-        # self.layout.addWidget(header_frame)
+        # Remove extra spacing
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(2)
         
         # Configure scroll area
         self.setWidgetResizable(True)
         self.setWidget(self.container)
         self.songs = []
+
+        # Add header
+        header = QWidget()
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(10, 5, 10, 5)
+        
+        rank_header = QLabel("")
+        name_header = QLabel("") 
+        similarity_header = QLabel("")
+        
+        header_layout.addWidget(rank_header)
+        header_layout.addWidget(name_header)
+        header_layout.addStretch()
+        header_layout.addWidget(similarity_header)
+        header_layout.addSpacing(40)  # Space for play button
+        
+        self.layout.addWidget(header)
         
         # Add spacing at the end
         self.layout.addStretch()

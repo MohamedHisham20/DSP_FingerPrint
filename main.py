@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaContent
 from matchmaker import Match_Maker
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QPushButton, QFrame, QHBoxLayout, QWidget, QScrollArea
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QPushButton, QFrame, QHBoxLayout, QWidget, QScrollArea, QSpacerItem, QSizePolicy
 from stylesheet import set_stylesheet
 
 
@@ -34,7 +34,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.player_mix2 = QMediaPlayer()
         self.mix_song1 = None
         self.mix_song2 = None
-        # self.player.setMedia(QMediaContent(QUrl.fromLocalFile(wav_file)))
+        self.w1 = 0.5
+        self.w2 = 0.5
         self.ui.show()
     
     def connections(self):
@@ -45,6 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.choose_file_3.clicked.connect(lambda: self.choose_audio_file(3))
         self.ui.play_song_btn_3.clicked.connect(lambda: self.play_stop_song(3))
         self.ui.Mix_btn.clicked.connect(lambda: self.get_top_matches(True))
+        self.ui.weighting.valueChanged.connect(self.update_weightes)
         
     def choose_audio_file(self, player_id):
         file_dialog = QtWidgets.QFileDialog()
@@ -72,6 +74,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         return the top matches
         """
+        if self.song_list.songs:
+            self.song_list.clear_all_songs()
+            
         if mix and self.mix_song1 and self.mix_song2:
             self.mk.new_search(self.mix_song1, self.mix_song2, True,0.5)
         else:       
@@ -79,6 +84,16 @@ class MainWindow(QtWidgets.QMainWindow):
                    
         matches = self.mk.get_top_matches()
         self.add_matches(matches)
+
+    
+    def update_weightes(self):
+        slider_current_value = self.ui.weighting.value()
+        w2 = slider_current_value/100
+        w1 = 1 - w2
+        self.song1_w.setText(f"Song1: {int(w1*100)}")
+        self.song2_w.setText(f"Song2: {int(w2*100)}")
+        self.w1 = w1
+        self.w2 = w2
         
     def add_matches(self, matches):
         for match in matches:
@@ -87,6 +102,9 @@ class MainWindow(QtWidgets.QMainWindow):
             score = match['score']      
             
             self.song_list.add_song(song_name=name, wav_file=path, similarity_index=score)
+
+
+
         
     def play_stop_song(self, player_id):
         if player_id == 1:
@@ -123,12 +141,41 @@ class ScrollableSongList(QScrollArea):
         self.container = QWidget()
         self.layout = QVBoxLayout(self.container)
         
+        # Remove extra spacing
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(2)
+        
+        # Configure scroll area
         self.setWidgetResizable(True)
         self.setWidget(self.container)
         self.songs = []
+
+        # Add header
+        header = QWidget()
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(10, 5, 10, 5)
+        
+        rank_header = QLabel("")
+        name_header = QLabel("") 
+        similarity_header = QLabel("")
+        
+        header_layout.addWidget(rank_header)
+        header_layout.addWidget(name_header)
+        header_layout.addStretch()
+        header_layout.addWidget(similarity_header)
+        header_layout.addSpacing(40)  # Space for play button
+        
+        self.layout.addWidget(header)
         
         # Add spacing at the end
         self.layout.addStretch()
+
+    def clear_all_songs(self):
+        for song in self.songs:
+            song.deleteLater()
+        self.songs = []
+        self.layout.addStretch()
+
         
     def add_song(self, song_name, wav_file, similarity_index):
         # Create new song element with rank based on insertion position
