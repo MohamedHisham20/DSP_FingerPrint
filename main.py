@@ -31,6 +31,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.play_song_btn.hide()
         self.ui.play_song_btn_2.hide()
         self.ui.play_song_btn_3.hide()
+        self.ui.Play_stop_mix.hide()
         self.player = QMediaPlayer()
         self.player_mix1 = QMediaPlayer()
         self.player_mix2 = QMediaPlayer()
@@ -83,11 +84,13 @@ class MainWindow(QtWidgets.QMainWindow):
             
         if mix and self.mix_song1 and self.mix_song2:
             self.mk.new_search(self.mix_song1, self.mix_song2, True,self.w1)
+            self.ui.Play_stop_mix.show()
         else:       
             self.mk.new_search(self.selected_song)  
                    
         matches = self.mk.get_top_matches()
         self.add_matches(matches)
+        
 
     
     def update_weightes(self):
@@ -111,12 +114,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def play_stop_mix(self):
         path = self.mk.mix_path
         if path:
-            if self.ui.play_mix_btn.text() == "▶":
-                self.ui.play_mix_btn.setText("◻")
+            if self.ui.Play_stop_mix.text() == "▶":
+                self.ui.Play_stop_mix.setText("◻")
                 self.mixer_player.setMedia(QMediaContent(QUrl.fromLocalFile(path)))
                 self.mixer_player.play()
             else:
-                self.ui.play_mix_btn.setText("▶")
+                self.ui.Play_stop_mix.setText("▶")
                 self.mixer_player.stop()
         
     def play_stop_song(self, player_id):

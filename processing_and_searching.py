@@ -60,11 +60,11 @@ def mix_audio(path1:str, path2:str, w1:float, w2:float):
     
     mix_audio = peak_normalize(mix_audio)
     
-    name, path =  save_mix(path1, path2, mix_audio, sr)
+    name, path =  save_mix(path1, path2, mix_audio, sr, w1, w2)
     
     return mix_audio, sr, name, path 
  
-def save_mix(path1, path2, mix_audio, sr):
+def save_mix(path1, path2, mix_audio, sr, w1, w2):
     """
     save mix audio in a .wav file.\n
     return mix_name and mix_file_path
@@ -75,7 +75,7 @@ def save_mix(path1, path2, mix_audio, sr):
     name2 = os.path.basename(path2)
     name2, ext = os.path.splitext(name2)
         
-    audio_name = name1+'and'+name2+'mix'
+    audio_name = name1+'weight_'+str(w1)+' and '+name2 + 'weight_' + str(w2)+' mix'
     save_path = os.path.join('saved_mix/'+audio_name+'.wav') 
             
     sf.write(save_path, mix_audio, sr) 
@@ -220,7 +220,7 @@ def search_hashed_database(query_features: Dict[str, Any], hashed_database: List
     return [song for _, song in distances[:top_n]]
 
 def calculate_hash_distance(hash1: str, hash2: str, distance_metric: str = 'h') -> float:
-    """
+    """ 
     Calculate the distance between two hashes based on the selected distance metric.\n
     distance_metric: cos --> cosine \n
     e -- > euclidean\n

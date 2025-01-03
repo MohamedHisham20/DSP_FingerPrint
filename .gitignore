@@ -4,7 +4,6 @@ task5.pdf
 coolVenv/
 __pycache__/
 icons/
-Data/
 test.json
 test2.json
 test.py
