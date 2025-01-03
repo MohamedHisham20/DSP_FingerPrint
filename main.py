@@ -26,6 +26,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.play_song_btn_2.setStyleSheet("font-size: 24px; color: white;")
         self.ui.play_song_btn_3.setText("▶")
         self.ui.play_song_btn_3.setStyleSheet("font-size: 24px; color: white;")
+        self.ui.Play_stop_mix.setText("▶")
+        self.ui.Play_stop_mix.setStyleSheet("font-size: 24px; color: white;")
         self.ui.play_song_btn.hide()
         self.ui.play_song_btn_2.hide()
         self.ui.play_song_btn_3.hide()
@@ -48,6 +50,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.play_song_btn_3.clicked.connect(lambda: self.play_stop_song(3))
         self.ui.Mix_btn.clicked.connect(lambda: self.get_top_matches(True))
         self.ui.weighting.valueChanged.connect(self.update_weightes)
+        self.ui.Play_stop_mix.clicked.connect(self.play_stop_mix)
         
     def choose_audio_file(self, player_id):
         file_dialog = QtWidgets.QFileDialog()
@@ -105,7 +108,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.song_list.add_song(song_name=name, wav_file=path, similarity_index=score)
 
 
-
+    def play_stop_mix(self):
+        path = self.mk.mix_path
+        if path:
+            if self.ui.play_mix_btn.text() == "▶":
+                self.ui.play_mix_btn.setText("◻")
+                self.mixer_player.setMedia(QMediaContent(QUrl.fromLocalFile(path)))
+                self.mixer_player.play()
+            else:
+                self.ui.play_mix_btn.setText("▶")
+                self.mixer_player.stop()
         
     def play_stop_song(self, player_id):
         if player_id == 1:

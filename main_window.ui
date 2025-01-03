@@ -1022,7 +1022,7 @@ QLabel#inTotalLabel, QLabel#outTotalLabel, QLabel#recordCountLabel
           <item>
            <widget class="QPushButton" name="Play_stop_mix">
             <property name="text">
-             <string/>
+             <string>▶</string>
             </property>
            </widget>
           </item>
