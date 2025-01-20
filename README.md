@@ -44,13 +44,16 @@ https://github.com/user-attachments/assets/11d34a41-a448-4156-a2f9-2d8b49871383
 - `json_ctrl.py`: Provides utility functions for reading and writing JSON files.
 - `song_widget.py`: Defines the GUI components for displaying song information.
 
-## Dependencies
-- Python 3.8+
-- PyQt5
-- NumPy
-- SciPy
-- Librosa
-- SoundFile
+## Contributors
 
-## License
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+Special thanks to everyone who has contributed to this project!  
+
+|              | GitHub Profile                     |
+|------------------|-----------------------------------|
+| [<img src="https://github.com/abdelrahman-alaa-10.png" width="20">](https://github.com/abdelrahman-alaa-10) | [Abdelrahman Alaa](https://github.com/abdelrahman-alaa-10) |
+| [<img src="https://github.com/Ibrahim-Fateen.png" width="20">](https://github.com/Ibrahim-Fateen) | [Ibrahim Fateen](https://github.com/Ibrahim-Fateen) |
+| [<img src="https://github.com/MohamedHisham20.png" width="20">](https://github.com/MohamedHisham20) | [Mohamed Hisham](https://github.com/MohamedHisham20) |
+| [<img src="https://github.com/salahmohamed03.png" width="20">](https://github.com/salahmohamed03) | [Salah Mohamed](https://github.com/salahmohamed03) |
+
+### Submitted to
+Dr. Tamer Basha & Eng. 
